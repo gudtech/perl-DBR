@@ -105,6 +105,7 @@ sub limit{
 sub force_index{
   my $self = shift;
   exists( $_[0] ) or return $self->{force_index} || undef;
+  my $index_name = shift;
   $self->{force_index} = length($index_name) ? $index_name : undef;
 
   return $self;
