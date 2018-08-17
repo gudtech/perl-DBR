@@ -158,4 +158,7 @@ sub _wrap{
 
       return wantarray?@_:$_[0];
 }
+
+sub force_index_syntax { 'FORCE INDEX (', ')' }
+
 1;

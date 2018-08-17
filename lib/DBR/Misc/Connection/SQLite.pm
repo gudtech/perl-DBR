@@ -16,4 +16,6 @@ sub getSequenceValue{
 
 sub can_lock { 0 }
 
+sub force_index_syntax { 'INDEXED BY ' }
+
 1;
