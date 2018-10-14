@@ -4,9 +4,9 @@
 # load modules without having to check if it worked.
 
 use strict;
+use warnings;
 BEGIN {
 	$|  = 1;
-	$^W = 1;
 }
 
 use Test::More tests => 4;
