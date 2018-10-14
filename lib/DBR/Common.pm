@@ -6,12 +6,16 @@ use Carp;
 
 my %TIMERS;
 
+#     my @unique = $obj->_uniq(@list);
+#
+# Return all the unique elements of a list, as a list.
+#
+# Comparison is done through stringification, with the exception of `undef`.
 sub _uniq{
     my $self = shift;
     my $has_undef;
     my %uniq;
     return grep{ defined($_)?(  !$uniq{$_}++  ):(  !$has_undef++  ) } @_;
-
 }
 
 #     my @elems = $obj->_split($string);

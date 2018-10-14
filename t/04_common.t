@@ -9,29 +9,31 @@ BEGIN {
 	$|  = 1;
 }
 
-use Test::More tests => 10;
+use Test::More tests => 11;
 
 use_ok('DBR::Common');
 
-#fake an object
+my $obj = MyCommon->new;
 
-my $obj = bless ({},'DBR::Common');
-
-
-my @list;
-
-#Numbers
-@list = $obj->_uniq( 1,1,2,1,3,4,5,5,6,0 );
-ok(@list == 7,'_uniq - Numbers');
-
-
-#Letters
-@list = $obj->_uniq( qw(A B C D E E F G) );
-ok(@list == 7,'_uniq - Letters');
-
-#Falses
-@list = $obj->_uniq( '',undef,0,' ',undef,' ' );
-ok( @list == 4, '_uniq - Various forms of false' );
+# _uniq
+{
+    my @input = (1, 1, 2, 1, 3, 4, 5, 5, 6, 0);
+    my @expected = (0 .. 6);
+    my @got = sort($obj->_uniq(@input));
+    is_deeply(\@got, \@expected, "_uniq numbers");
+    my $count = $obj->_uniq(@input);
+    is($count, scalar @expected, "_uniq returns count in scalar context");
+}
+{
+    my @input = qw(A B C D E E F G);
+    my @expected = ('A' .. 'G');
+    my @got = sort($obj->_uniq(@input));
+    is_deeply(\@got, \@expected, "_uniq letters");
+}
+{
+    my @got = $obj->_uniq('', undef, 0, ' ', undef, ' ');
+    is(@got, 4, '_uniq - Various forms of false');
+}
 
 # _split
 {
@@ -55,4 +57,13 @@ ok( @list == 4, '_uniq - Various forms of false' );
     is_deeply($got, \@expected, '_arrayify returns arrayref in scalar context');
     my $same = $obj->_arrayify(\@input);
     is_deeply($same, \@input, '_arrayify only flattens one level');
+}
+
+package MyCommon;
+BEGIN{ our @ISA = qw( DBR::Common ) }
+
+# Trivial test-only subclass.
+
+sub new {
+    return bless {}, __PACKAGE__;
 }
