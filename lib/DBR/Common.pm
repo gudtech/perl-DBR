@@ -1,10 +1,7 @@
 package DBR::Common;
 
 use strict;
-use Time::HiRes;
 use Carp;
-
-my %TIMERS;
 
 sub _uniq{
     my $self = shift;
@@ -50,25 +47,6 @@ sub _b_in{
                   return 0;
             }
       }
-      return 1;
-}
-
-sub _stopwatch{
-      my $self = shift;
-      my $label = shift;
-
-      my ( $package, $filename, $line, $method ) = caller( 1 ); # First caller up
-      $method ||= '';
-      my ($m) = $method =~ /([^\:]*)$/;
-
-      if($label){
-	    my $elapsed = Time::HiRes::time() - $TIMERS{$method};
-	    my $seconds = sprintf('%.8f',$elapsed);
-	    $self->_logDebug2( "$m ($label) took $seconds seconds");
-      }
-
-      $TIMERS{ $method } = Time::HiRes::time(); # Logger could be slow
-
       return 1;
 }
 
