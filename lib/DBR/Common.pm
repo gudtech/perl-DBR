@@ -36,6 +36,12 @@ sub _split{
       return wantarray? (@$out): $out;
 }
 
+#      # @nums = (1, 2, 3, 4, 5, 6);
+#      my @nums = $obj->_arrayify([1, 2, 3], [4, 5, 6]);
+#
+# Given a list, expand any arrayrefs, flattening by one level.
+#
+# Returns an array in list context, or an arrayref in scalar context.
 sub _arrayify{
       my $self = shift;
       my @out = map { ref($_) eq 'ARRAY' ? (@$_) : ($_) } @_;

@@ -9,7 +9,7 @@ BEGIN {
 	$|  = 1;
 }
 
-use Test::More tests => 7;
+use Test::More tests => 10;
 
 use_ok('DBR::Common');
 
@@ -43,4 +43,16 @@ ok( @list == 4, '_uniq - Various forms of false' );
     is_deeply(\@dupes, \@expected, '_split arrayref returns elems');
     my $got = $obj->_split($input);
     is_deeply($got, \@expected, '_split returns arrayref in scalar context');
+}
+
+# _arrayify
+{
+    my @input = ([1 .. 3], [4 .. 6]);
+    my @expected = 1 .. 6;
+    my @got = $obj->_arrayify(@input);
+    is_deeply(\@got, \@expected, '_arrayify two arrayrefs');
+    my $got = $obj->_arrayify(@input);
+    is_deeply($got, \@expected, '_arrayify returns arrayref in scalar context');
+    my $same = $obj->_arrayify(\@input);
+    is_deeply($same, \@input, '_arrayify only flattens one level');
 }
