@@ -9,7 +9,7 @@ BEGIN {
 	$|  = 1;
 }
 
-use Test::More tests => 4;
+use Test::More tests => 7;
 
 use_ok('DBR::Common');
 
@@ -33,5 +33,14 @@ ok(@list == 7,'_uniq - Letters');
 @list = $obj->_uniq( '',undef,0,' ',undef,' ' );
 ok( @list == 4, '_uniq - Various forms of false' );
 
-
-# Split
+# _split
+{
+    my $input = ' fee fie fo fum ';
+    my @expected = qw( fee fie fo fum );
+    my @got = $obj->_split($input);
+    is_deeply(\@got, \@expected, '_split string');
+    my @dupes = $obj->_split(\@got);
+    is_deeply(\@dupes, \@expected, '_split arrayref returns elems');
+    my $got = $obj->_split($input);
+    is_deeply($got, \@expected, '_split returns arrayref in scalar context');
+}

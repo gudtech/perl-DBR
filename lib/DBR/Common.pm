@@ -14,6 +14,13 @@ sub _uniq{
 
 }
 
+#     my @elems = $obj->_split($string);
+#     my @same  = $obj->_split(\@elems);
+#
+# Split an input string on whitespace.  If the input is an array ref, return
+# the elements of the referenced array.
+#
+# Returns an array in list context, or an arrayref in scalar context.
 sub _split{
       my $self = shift;
       my $value = shift;
