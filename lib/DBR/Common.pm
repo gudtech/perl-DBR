@@ -35,21 +35,6 @@ sub _arrayify{
       return wantarray? (@out) : \@out;
 }
 
-sub _hashify{
-      my $self = shift;
-      my %out;
-      while(@_){
-	    my $k = shift;
-	    if(ref($k) eq 'HASH'){
-		  %out = (%out,%$k);
-		  next;
-	    }
-	    my $v = shift;
-	    $out{ $k } = $v;
-      }
-      return wantarray? (%out) : \%out;
-}
-
 # returns true if all elements of Arrayref A (or single value) are present in arrayref B
 sub _b_in{
       my $self = shift;
