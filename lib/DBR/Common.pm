@@ -96,6 +96,5 @@ sub _error     {
 }
 
 sub _session { $_[0]->{session} }
-sub is_debug { $_[0]->{debug}  }
 
 1;
