@@ -3,14 +3,27 @@ package DBR::Common;
 use strict;
 use Carp;
 
+my %TIMERS;
+
+#     my @unique = $obj->_uniq(@list);
+#
+# Return all the unique elements of a list, as a list.
+#
+# Comparison is done through stringification, with the exception of `undef`.
 sub _uniq{
     my $self = shift;
     my $has_undef;
     my %uniq;
     return grep{ defined($_)?(  !$uniq{$_}++  ):(  !$has_undef++  ) } @_;
-
 }
 
+#     my @elems = $obj->_split($string);
+#     my @same  = $obj->_split(\@elems);
+#
+# Split an input string on whitespace.  If the input is an array ref, return
+# the elements of the referenced array.
+#
+# Returns an array in list context, or an arrayref in scalar context.
 sub _split{
       my $self = shift;
       my $value = shift;
@@ -26,6 +39,12 @@ sub _split{
       return wantarray? (@$out): $out;
 }
 
+#      # @nums = (1, 2, 3, 4, 5, 6);
+#      my @nums = $obj->_arrayify([1, 2, 3], [4, 5, 6]);
+#
+# Given a list, expand any arrayrefs, flattening by one level.
+#
+# Returns an array in list context, or an arrayref in scalar context.
 sub _arrayify{
       my $self = shift;
       my @out = map { ref($_) eq 'ARRAY' ? (@$_) : ($_) } @_;
