@@ -1,10 +1,7 @@
 package DBR::Common;
 
 use strict;
-use Time::HiRes;
 use Carp;
-
-my %TIMERS;
 
 sub _uniq{
     my $self = shift;
@@ -35,21 +32,6 @@ sub _arrayify{
       return wantarray? (@out) : \@out;
 }
 
-sub _hashify{
-      my $self = shift;
-      my %out;
-      while(@_){
-	    my $k = shift;
-	    if(ref($k) eq 'HASH'){
-		  %out = (%out,%$k);
-		  next;
-	    }
-	    my $v = shift;
-	    $out{ $k } = $v;
-      }
-      return wantarray? (%out) : \%out;
-}
-
 # returns true if all elements of Arrayref A (or single value) are present in arrayref B
 sub _b_in{
       my $self = shift;
@@ -65,25 +47,6 @@ sub _b_in{
                   return 0;
             }
       }
-      return 1;
-}
-
-sub _stopwatch{
-      my $self = shift;
-      my $label = shift;
-
-      my ( $package, $filename, $line, $method ) = caller( 1 ); # First caller up
-      $method ||= '';
-      my ($m) = $method =~ /([^\:]*)$/;
-
-      if($label){
-	    my $elapsed = Time::HiRes::time() - $TIMERS{$method};
-	    my $seconds = sprintf('%.8f',$elapsed);
-	    $self->_logDebug2( "$m ($label) took $seconds seconds");
-      }
-
-      $TIMERS{ $method } = Time::HiRes::time(); # Logger could be slow
-
       return 1;
 }
 
@@ -133,68 +96,5 @@ sub _error     {
 }
 
 sub _session { $_[0]->{session} }
-sub is_debug { $_[0]->{debug}  }
-
-package DBR::Common::DummySession;
-
-
-# sub _error {
-#       my $self = shift;
-#       my $message = shift;
-
-#       my ( $package, $filename, $line, $method) = caller(1);
-#       if ($self->session){
-# 	    $self->session->logErr($message,$method);
-#       }else{
-# 	    print STDERR "DBR ERROR: $message ($method, line $line)\n";
-#       }
-#       return undef;
-# }
-
-# sub _logDebug{
-#       my $self = shift;
-#       my $message = shift;
-#       my ( $package, $filename, $line, $method) = caller(1);
-#       if ($self->session){
-# 	    $self->session->logDebug($message,$method);
-#       }elsif($self->is_debug){
-# 	    print STDERR "DBR DEBUG: $message\n";
-#       }
-# }
-# sub _logDebug2{
-#       my $self = shift;
-#       my $message = shift;
-#       my ( $package, $filename, $line, $method) = caller(1);
-#       if ($self->session){
-# 	    $self->session->logDebug2($message,$method);
-#       }elsif($self->is_debug){
-# 	    print STDERR "DBR DEBUG2: $message\n";
-#       }
-# }
-# sub _logDebug3{
-#       my $self = shift;
-#       my $message = shift;
-#       my ( $package, $filename, $line, $method) = caller(1);
-#       if ($self->session){
-# 	    $self->session->logDebug3($message,$method);
-#       }elsif($self->is_debug){
-# 	    print STDERR "DBR DEBUG3: $message\n";
-#       }
-
-# }
-
-# #HERE HERE HERE - do some fancy stuff with dummy subroutines in the symbol table if nobody is in debug mode
-
-# sub _log{
-#       my $self = shift;
-#       my $message = shift;
-#       my ( $package, $filename, $line, $method) = caller(1);
-#       if ($self->session){
-# 	    $self->session->log($message,$method,'INFO');
-#       }else{
-# 	    print STDERR "DBR: $message\n";
-#       }
-#       return 1;
-# }
 
 1;
