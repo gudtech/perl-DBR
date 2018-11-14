@@ -39,31 +39,19 @@ sub _check_permissions{
     my $perms = $_PERMISSIONS->{$ref};
     return (0, "no permissions for " . $ref) if !$perms;
     my $allowed = $perms->{allow};
-    my $reason = $allowed ? "" : "$ref not allowed";
-    my $tables = $self->tables;
+    my $reason = $allowed ? '' : "$ref not allowed";
     if ($allowed && (my $blacklist = $perms->{blacklist})){
-        if (my @intersections = _intersect($blacklist, map { $_->name } @$tables)){
+        my $tables = $self->tables;
+        if (my @intersections = grep { $blacklist->{$_->name} } @$tables){
             return (0, "blacklisted tables: " . join(',', @intersections));
         }
     } elsif (!$allowed && (my $whitelist = $perms->{whitelist})){
-        if (my @intersections = _intersect($whitelist, map { $_->name } @$tables)){
-            if (0+@intersections == 0+@$tables){
-                return 1;
-            }
+        my $tables = $self->tables;
+        if (my @intersections = grep { $whitelist->{$_->name} } @$tables){
+            return 1 if 0+@intersections == 0+@$tables;
         }
     }
     return ($allowed, $reason);
-}
-
-sub _intersect {
-    my ($hash, @list) = @_;
-    my $ret = 0;
-    my @intersections;
-    for my $key (@list){
-        $ret = 1 if exists $hash->{$key};
-        push @intersections, $key
-    }
-    return @intersections;
 }
 
 sub new {
@@ -89,7 +77,7 @@ sub new {
       }
 
     my ($allowed, $reason) = $self->_check_permissions;
-    croak $reason unless $allowed;
+    croak $reason if !$allowed;
 
       $self->validate() or croak "Object is not valid"; # HERE - not enough info as to why
 
