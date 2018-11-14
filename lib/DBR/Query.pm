@@ -12,6 +12,60 @@ sub _params{ confess "Shouldn't get here" }
 sub _reqparams{ confess "Shouldn't get here" }
 use Scalar::Util 'blessed';
 
+my $_PERMISSIONS = {
+    'DBR::Query::Select' => {
+        allow => 1
+    },
+    'DBR::Query::Count'  => {
+        allow => 1
+    },
+    'DBR::Query::Insert' => {
+        allow     => 1,
+        blacklist => {
+            'money_value' => 1
+        }
+    },
+    'DBR::Query::Update' => {
+        allow     => 0,
+    },
+    'DBR::Query::Delete' => {
+        allow => 0
+    },
+};
+
+sub _check_permissions{
+    my $self = shift;
+    my $ref = ref($self);
+    my $perms = $_PERMISSIONS->{$ref};
+    return (0, "no permissions for " . $ref) if !$perms;
+    my $allowed = $perms->{allow};
+    my $reason = $allowed ? "" : "$ref not allowed";
+    my $tables = $self->tables;
+    if ($allowed && (my $blacklist = $perms->{blacklist})){
+        if (my @intersections = _intersect($blacklist, map { $_->name } @$tables)){
+            return (0, "blacklisted tables: " . join(',', @intersections));
+        }
+    } elsif (!$allowed && (my $whitelist = $perms->{whitelist})){
+        if (my @intersections = _intersect($whitelist, map { $_->name } @$tables)){
+            if (0+@intersections == 0+@$tables){
+                return 1;
+            }
+        }
+    }
+    return ($allowed, $reason);
+}
+
+sub _intersect {
+    my ($hash, @list) = @_;
+    my $ret = 0;
+    my @intersections;
+    for my $key (@list){
+        $ret = 1 if exists $hash->{$key};
+        push @intersections, $key
+    }
+    return @intersections;
+}
+
 sub new {
       my( $package, %params ) = @_;
 
@@ -33,6 +87,9 @@ sub new {
 		  croak "$key is required";
 	    }
       }
+
+    my ($allowed, $reason) = $self->_check_permissions;
+    croak $reason unless $allowed;
 
       $self->validate() or croak "Object is not valid"; # HERE - not enough info as to why
 
