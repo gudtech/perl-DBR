@@ -43,7 +43,7 @@ sub _check_permissions{
     if ($allowed && (my $blacklist = $perms->{blacklist})){
         my $tables = $self->tables;
         if (my @intersections = grep { $blacklist->{$_->name} } @$tables){
-            return (0, "blacklisted tables: " . join(',', @intersections));
+            return (0, "blacklisted tables: " . join(', ', map { $_->name } @intersections));
         }
     } elsif (!$allowed && (my $whitelist = $perms->{whitelist})){
         my $tables = $self->tables;
