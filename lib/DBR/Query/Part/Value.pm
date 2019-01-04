@@ -52,7 +52,7 @@ sub new{
                 my @tv = $trans->backward($_);
 
                 # undef is ok... but we Must have at least one element, or we are bailing
-                scalar(@tv) or $self->_error('invalid: invalid value');
+                scalar(@tv) or $self->_error('invalid value');
                 push @translated, @tv;
             }
             $value = \@translated;
@@ -62,7 +62,7 @@ sub new{
         my $testsub = $field->testsub or confess 'failed to retrieve testsub';
 
         foreach (@$value) {
-            $testsub->($_) or $self->_error('invalid: invalid value');
+            $testsub->($_) or $self->_error('invalid value');
         }
 
     }else{
@@ -73,7 +73,7 @@ sub new{
         if ( $self->{is_number} ) {
             foreach my $val ( @{$value}) {
                 $val = '' unless defined $val;
-                looks_like_number($val) or $self->_error('invalid: value is not a legal number');
+                looks_like_number($val) or $self->_error('value is not a legal number');
             }
         }
     }
