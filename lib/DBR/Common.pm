@@ -98,17 +98,22 @@ sub _warn       {
 
 sub _error     {
     my $s = shift->_session;
+	my $code = shift;
     my $message = shift;
+	unless (defined $message) {
+		$message = $code;
+		$code = 'internal_error';
+	}
 
     if($s){
-	$s->_log( $message, 'ERROR' );
+		$s->_log( $message, 'ERROR' );
     }else{
-	print STDERR "DBR ERROR: $message\n";
+		print STDERR "DBR ERROR: $message\n";
     }
     
     if( $s && $s->use_exceptions ){
-	local $Carp::CarpLevel = 1;
-	croak $message;
+		local $Carp::CarpLevel = 1;
+		croak "$code: $message";
     }
     
     return undef;
