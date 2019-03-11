@@ -30,6 +30,8 @@ sub provision{
     my $package = shift if blessed($_[0]) || $_[0] eq __PACKAGE__;
     my %params = @_;
     my $schema = $params{schema} or confess "schema is required";
+    my $class = $params{class} || 'master';
+    my $tag = $params{tag};
     
     my $sandbox = '_sandbox/' . $params{schema};
     my $dbrconf = $params{writeconf} || "$sandbox/DBR.conf";
@@ -45,7 +47,7 @@ sub provision{
     _load_sqlfile ( "$CONFDIR/dbr_schema_sqlite.sql", $metadb );
     _load_sqlfile ( "$CONFDIR/$schema/sql", $maindb );
     
-    _setup_metadb ( $sandbox, $schema, $metadb );
+    _setup_metadb ( $sandbox, $schema, $class, $tag, $metadb );
     
     $metadb->disconnect();
     $maindb->disconnect();
@@ -61,7 +63,7 @@ sub provision{
     ) or die 'failed to create dbr object';
     
     my $conf_instance = $dbr->get_instance('dbrconf') or die "No config found for confdb";
-    my $scan_instance = $dbr->get_instance($schema)   or die "No config found for $schema";
+    my $scan_instance = $dbr->get_instance($schema, $class, $tag)   or die "No config found for $schema";
     
     my $scanner = DBR::Config::ScanDB->new(
 				     session => $dbr->session,
@@ -128,10 +130,13 @@ sub _load_sqlfile{
 sub _setup_metadb{
     my $sandbox = shift;
     my $schema  = shift;
+    my $class = shift || 'master';
+    my $tag = shift || '';
+
     my $dbh = shift;
 
     $dbh->do("INSERT INTO dbr_schemas (schema_id,handle) values (1,'$schema')") or return 0;
-    $dbh->do("INSERT INTO dbr_instances (schema_id,handle,class,dbfile,module) values (1,'$schema','master','$sandbox/db.sqlite','SQLite')") or return 0;
+    $dbh->do("INSERT INTO dbr_instances (schema_id,handle,class,tag,dbfile,module) values (1,'$schema','$class','$tag','$sandbox/db.sqlite','SQLite')") or return 0;
 
     return 1;
 }
