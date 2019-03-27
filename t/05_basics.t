@@ -11,7 +11,7 @@ use t::lib::Test;
 use Test::More tests => 44;
 
 # As always, it's important that the sample database is not tampered with, otherwise our tests will fail
-my $dbr = setup_schema_ok('music');
+my $dbr = setup_schema_ok({ schema => 'music', use_exceptions => 1 });
 
 my $dbh = $dbr->connect('music');
 ok($dbh, 'dbr connect');
