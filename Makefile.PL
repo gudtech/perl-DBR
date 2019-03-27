@@ -37,5 +37,8 @@ WriteMakefile(
 				  'Time::ParseDate'    => 0,
 				  'Text::SimpleTable::AutoWidth' => 0
 				 },
+	      TEST_REQUIRES   => {
+				  'Test::Exception'    => 0,
+				 },
 
 	     );
