@@ -11,7 +11,7 @@ use t::lib::Test;
 use Test::More tests => 44;
 
 # As always, it's important that the sample database is not tampered with, otherwise our tests will fail
-my $dbr = setup_schema_ok('music');
+my $dbr = setup_schema_ok({ schema => 'music', use_exceptions => 1 });
 
 my $dbh = $dbr->connect('music');
 ok($dbh, 'dbr connect');
@@ -113,16 +113,22 @@ ok($@ =~ /invalid value/i, 'v2 insert w/ disallowed character throws exeption');
 
 
 ########## ->parse ###########
-ok(  $dbh->album->parse('rating' => 'sucks'    ), 'parse an enum field'                  );
-ok( !$dbh->album->parse('rating' => 'quixotic' ), 'parse an enum field w/ illegal value' );
+ok( $dbh->album->parse( 'rating' => 'sucks' ), 'parse an enum field' );
+eval { $dbh->album->parse( 'rating' => 'quixotic' ) };
+ok($@ =~ /invalid value/i, 'parse an enum field w/ illegal value');
 
-ok(  $dbh->artist->parse('royalty_rate' => '1%'  ), 'parse a percent field'                  );
-ok( !$dbh->artist->parse('royalty_rate' => 'meh' ), 'parse a percent field w/ illegal value' );
+ok( $dbh->artist->parse( 'royalty_rate' => '1%' ), 'parse a percent field' );
+eval { $dbh->artist->parse( 'royalty_rate' => 'meh' ) };
+ok($@ =~ /invalid value/i, 'parse a percent field w/ illegal value');
 
-ok(  $dbh->track->parse('name' => 'Totally ok' ), 'parse a regular field'                     );
-ok( !$dbh->track->parse('name' => 'Not! ok'    ), 'parse a regular field w/ illegal value'    );
+ok( $dbh->track->parse( 'name' => 'Totally ok' ), 'parse a regular field' );
+eval { $dbh->track->parse( 'name' => 'Not! ok' ) };
+ok($@ =~ /invalid value/i, 'parse a regular field w/ illegal value');
 
-ok(  $dbh->track->parse('album_id' => 123         ), 'parse a regular numeric field'                     );
-ok( !$dbh->track->parse('album_id' => undef       ), 'parse a regular numeric field w/ illegal value'    );
-ok( !$dbh->track->parse('album_id' => ''          ), 'parse a regular numeric field w/ illegal value B'    );
-ok( !$dbh->track->parse('album_id' => 'whybother' ), 'parse a regular numeric field w/ illegal value C'    );
+ok( $dbh->track->parse( 'album_id' => 123 ), 'parse a regular numeric field' );
+eval { $dbh->track->parse( 'album_id' => undef ) };
+ok($@ =~ /invalid value/i, 'parse a regular numeric field w/ illegal value');
+eval { $dbh->track->parse( 'album_id' => '' ) };
+ok($@ =~ /invalid value/i, 'parse a regular numeric field w/ illegal value B');
+eval { $dbh->track->parse( 'album_id' => 'whybother' ) };
+ok($@ =~ /invalid value/i, 'parse a regular numeric field w/ illegal value C');

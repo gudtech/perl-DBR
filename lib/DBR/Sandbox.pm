@@ -30,53 +30,57 @@ sub provision{
     my $package = shift if blessed($_[0]) || $_[0] eq __PACKAGE__;
     my %params = @_;
     my $schema = $params{schema} or confess "schema is required";
-    
+    my $class = $params{class} || 'master';
+    my $tag = $params{tag};
+
     my $sandbox = '_sandbox/' . $params{schema};
     my $dbrconf = $params{writeconf} || "$sandbox/DBR.conf";
-    
+    my $use_exceptions = $params{use_exceptions} ? 1 : 0;
+
     return if $params{reuse} && -e $dbrconf && -d $sandbox;
-    
+
     print STDERR "Provisioning Sandbox... " unless $params{quiet};
     _ready_sandbox ( $sandbox );
-    
+
     my $metadb = _sqlite_connect( dbfile => "$sandbox/dbrconf.sqlite" );
     my $maindb = _sqlite_connect( dbfile => "$sandbox/db.sqlite" );
-    
+
     _load_sqlfile ( "$CONFDIR/dbr_schema_sqlite.sql", $metadb );
     _load_sqlfile ( "$CONFDIR/$schema/sql", $maindb );
-    
-    _setup_metadb ( $sandbox, $schema, $metadb );
-    
+
+    _setup_metadb ( $sandbox, $schema, $class, $tag, $metadb );
+
     $metadb->disconnect();
     $maindb->disconnect();
-    
+
     _write_dbrconf( $sandbox, $dbrconf );
-    
+
     my $logger = new DBR::Util::Logger( -logpath => '_sandbox/sandbox_setup.log', -logLevel => 'debug3' ) or die "logger create failed";
     my $dbr = new DBR(
-        -logger   => $logger,
-        -conf     => $dbrconf,
-        -admin    => 1,
-        -fudge_tz => 1,
+        -logger         => $logger,
+        -conf           => $dbrconf,
+        -admin          => 1,
+        -fudge_tz       => 1,
+        -use_exceptions => $use_exceptions,
     ) or die 'failed to create dbr object';
-    
+
     my $conf_instance = $dbr->get_instance('dbrconf') or die "No config found for confdb";
-    my $scan_instance = $dbr->get_instance($schema)   or die "No config found for $schema";
-    
+    my $scan_instance = $dbr->get_instance($schema, $class, $tag)   or die "No config found for $schema";
+
     my $scanner = DBR::Config::ScanDB->new(
-				     session => $dbr->session,
-				     conf_instance => $conf_instance,
-				     scan_instance => $scan_instance,
-				    );
-    
+                     session => $dbr->session,
+                     conf_instance => $conf_instance,
+                     scan_instance => $scan_instance,
+                    );
+
     $scanner->scan or die "Failed to scan $schema";
-    
+
     my $loader = DBR::Config::SpecLoader->new(
                       session       => $dbr->session,
                       conf_instance => $conf_instance,
                       dbr           => $dbr,
                     ) or die "Failed to create spec loader";
-    
+
     my $spec = $loader->parse_file( "$CONFDIR/$schema/spec" ) or die "Failed to open $CONFDIR/$schema/spec";
 
     $loader->process_spec( $spec ) or die "Failed to process spec data";
@@ -128,10 +132,13 @@ sub _load_sqlfile{
 sub _setup_metadb{
     my $sandbox = shift;
     my $schema  = shift;
+    my $class = shift || 'master';
+    my $tag = shift || '';
+
     my $dbh = shift;
 
     $dbh->do("INSERT INTO dbr_schemas (schema_id,handle) values (1,'$schema')") or return 0;
-    $dbh->do("INSERT INTO dbr_instances (schema_id,handle,class,dbfile,module) values (1,'$schema','master','$sandbox/db.sqlite','SQLite')") or return 0;
+    $dbh->do("INSERT INTO dbr_instances (schema_id,handle,class,tag,dbfile,module) values (1,'$schema','$class','$tag','$sandbox/db.sqlite','SQLite')") or return 0;
 
     return 1;
 }
@@ -146,7 +153,7 @@ sub _write_dbrconf{
     print $fh "# required to have a starting point for fetching metadata. Defining other\n";
     print $fh "# instances here is possible, but discouraged, as functionality will be\n";
     print $fh "# dramatically degraded due to lack of metadata.\n\n";
-    
+
     print $fh "name=dbrconf; class=master; dbfile=$sandbox/dbrconf.sqlite; type=SQLite; dbr_bootstrap=1\n";
     close $fh;
 

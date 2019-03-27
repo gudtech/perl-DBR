@@ -16,8 +16,8 @@ use base 'Exporter';
 
 # Delete temporary files
 sub clean {
-	#unlink( 'test-subject-db.sqlite' );
-	#unlink( 'test-config-db.sqlite'  );
+    #unlink( 'test-subject-db.sqlite' );
+    #unlink( 'test-config-db.sqlite'  );
 }
 
 # Clean up temporary test files both at the beginning and end of the
@@ -38,9 +38,34 @@ sub connect_ok {
 }
 
 sub setup_schema_ok{
-    my $testid = shift;
-    my $dbr = DBR::Sandbox->provision( schema => $testid, quiet => 1 );
-    
+    my $testid;
+    my $class;
+    my $tag;
+    my $use_exceptions;
+
+    if ( @_ == 1 && ref($_[0]) eq 'HASH') {
+        my $params = shift;
+
+        $testid = $params->{testid} // $params->{schema};
+        $class = $params->{class};
+        $tag = $params->{tag};
+        $use_exceptions = $params->{use_exceptions};
+    }
+    else {
+        $testid = shift;
+        $class = shift;
+        $tag = shift;
+        $use_exceptions = shift;
+    }
+
+    my $dbr = DBR::Sandbox->provision(
+        schema => $testid,
+        class => $class,
+        tag => $tag,
+        quiet => 1,
+        use_exceptions => $use_exceptions ? 1 : 0,
+    );
+
     Test::More::ok( $dbr, 'Setup Schema' );
     return $dbr;
 }

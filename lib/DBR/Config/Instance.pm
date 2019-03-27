@@ -68,11 +68,7 @@ sub lookup{
 
             $self->{guid} = $findit->();
             if (!$self->{guid}) {
-                for my $confguid (keys %INSTANCES_BY_GUID) {
-                    my $conf = $package->lookup( session => $params{session}, guid => $confguid ) or return $self->_error("Failed to fetch conf instance");
-                    next unless $conf->dbr_bootstrap;
-                    $package->load_from_db( parent_inst => $conf, session => $params{session} ) or return $self->_error("Failed to reload instances");
-                }
+                __PACKAGE__->reload_instances( session => $params{session} );
                 $self->{guid} = $findit->();
             }
             if (!$self->{guid}) {
@@ -83,6 +79,17 @@ sub lookup{
       $INSTANCES_BY_GUID{ $self->{guid} } or return $self->_error('no such guid');
 
       return $self;
+}
+
+sub reload_instances {
+    my $package = shift;
+    my %params = @_;
+
+    for my $confguid (keys %INSTANCES_BY_GUID) {
+        my $conf = $package->lookup( session => $params{session}, guid => $confguid ) or return $package->_error("Failed to fetch conf instance");
+        next unless $conf->dbr_bootstrap;
+        $package->load_from_db( parent_inst => $conf, session => $params{session} ) or return $package->_error("Failed to reload instances");
+    }
 }
 
 sub guess_sibling {

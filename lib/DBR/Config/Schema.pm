@@ -156,8 +156,20 @@ sub get_instance{
       my $tag   = shift;
       $tag = '' if !defined($tag);
       
-      my $lu = $INSTANCE_LOOKUP{ $self->{schema_id} } || {};
-      my $guid = $lu->{$tag}{$class} || $lu->{''}{$class} or return $self->_error("instance " . $self->handle . "-$class-$tag does not exist");
+      my $findit = sub {
+          my $lu = $INSTANCE_LOOKUP{ $self->{schema_id} } || {};
+          return $lu->{$tag}{$class} || $lu->{''}{$class};
+      };
+
+      my $guid = $findit->();
+      if (!$self->{guid}) {
+            DBR::Config::Instance->reload_instances( session => $self->{session} );
+            $guid = $findit->();
+      }
+      if (!$guid) {
+            return $self->_error("instance " . $self->handle . "-$class-$tag does not exist");
+      }
+
 
       my $instance = DBR::Config::Instance->lookup(
 						   session => $self->{session},
