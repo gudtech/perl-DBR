@@ -11,7 +11,6 @@ WriteMakefile(
               EXE_FILES    => [qw'bin/dbr-admin bin/dbr-dump-spec bin/dbr-load-spec bin/dbr-scan-db bin/dbr-config'],
 	      PREREQ_PM       => {
 				  'Carp'               => 0,
-				  'Class::Std'         => 0,
 				  'Clone'              => 0,
 				  'Curses::UI'         => 0,
 				  'Data::Dumper'       => 0,
@@ -36,6 +35,9 @@ WriteMakefile(
 				  'Time::HiRes'        => 0,
 				  'Time::ParseDate'    => 0,
 				  'Text::SimpleTable::AutoWidth' => 0
+				 },
+	      TEST_REQUIRES   => {
+				  'Test::Exception'    => 0,
 				 },
 
 	     );
