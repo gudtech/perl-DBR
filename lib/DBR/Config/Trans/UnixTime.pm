@@ -8,9 +8,9 @@ package DBR::Config::Trans::UnixTime;
 use strict;
 use base 'DBR::Config::Trans';
 use strict;
-#use Date::Parse ();
-use Time::ParseDate ();
+
 use POSIX qw(strftime tzset);
+use DBR::Util::Date;
 
 sub new { die "Should not get here" }
 
@@ -41,13 +41,8 @@ sub backward{
       }else{
 	    local($ENV{TZ}) = ${$self->{tzref}}; tzset(); # Date::Parse doesn't accept timezone in the way we want to specify it. Lame.
 
-	    # Ok... so Date::Parse is kinda cool and all, except for the fact that it breaks horribly on
-	    # Non DST-specific timezone prefixes, like PT, MT, CT, ET. Treats them all like GMT.
-	    # Even strptime freaks out on it. What gives Graham? 
-	    # P.S. glass house here throwing stones, but try adding a comment or two.
+        my $uxtime = DBR::Util::Date::to_unixtime($value);
 
-	    #my $uxtime = Date::Parse::str2time($value);
-	    my $uxtime = Time::ParseDate::parsedate($value);
 
 	    unless($uxtime){
 		  $self->_error("Invalid time '$value'");

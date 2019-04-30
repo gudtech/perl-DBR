@@ -8,6 +8,7 @@ use strict;
 
 use base 'DBR::Config::Trans';
 use DBR::Config::Trans::UnixTime;
+use DBR::Util::Date;
 use POSIX qw(strftime);
 
 sub init {
@@ -20,7 +21,7 @@ sub forward{
       my $self  = shift;
       my $value = shift;
       
-      my $unixtime = Time::ParseDate::parsedate($value);
+      my $unixtime = DBR::Util::Date::to_unixtime($value);
       return bless( [$unixtime,$self->{tzref}] , 'DBR::_UXTIME');
 }
 
@@ -39,7 +40,7 @@ sub backward{
         $unixtime = $value;
         
     }else{
-        $unixtime = Time::ParseDate::parsedate($value);
+        $unixtime = DBR::Util::Date::to_unixtime($value);
 
         unless($unixtime){
           $self->_error("Invalid time '$value'");
