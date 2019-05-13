@@ -298,8 +298,11 @@ sub _new_connection{
       my $config = $INSTANCES_BY_GUID{ $self->{guid} };
       my @params = ($config->{connectstring}, $config->{user}, $config->{password});
 
-      my $dbh = DBI->connect(@params) or
-	return $self->_error("Error: Failed to connect to db $config->{handle},$config->{class}");
+      my $dbh = DBI->connect(@params);
+      unless ($dbh) {
+          $self->_log("DBI error attempting to connect to db $config->{handle},$config->{class}: $DBI::errstr");
+          return $self->_error("Error: Failed to connect to db $config->{handle},$config->{class}");
+      }
 
       my $connclass = $config->{connclass};
 
