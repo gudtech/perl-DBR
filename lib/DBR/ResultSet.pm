@@ -267,7 +267,7 @@ sub set {
 
 	     $value->count == 1 or croak("Field $name allows only a single value");
 
-	     my $setobj   = DBR::Query::Part::Set->new( $field, $value ) or return $self->_error('failed to create set object');
+         my $setobj   = DBR::Query::Part::Set->new( $field, $value ) or return $self->[f_query]->_error('failed to create set object');
 
 	     push @sets, $setobj;
        };
@@ -328,7 +328,7 @@ sub order_by {
         my $field_o = $table->get_field( $field ) or croak "Invalid field $field";
         $field_o->table_alias( $alias ) if $alias;
 
-        $field = DBR::Query::Part::OrderBy->new( $field_o, $dir ) or return $self->_error('failed to create order by object');
+        $field = DBR::Query::Part::OrderBy->new( $field_o, $dir ) or return $self->[f_query]->_error('failed to create order by object');
     }
 
     $self->[f_query]->orderby([ @{ $self->[f_query]->orderby || [] }, $field ]);
