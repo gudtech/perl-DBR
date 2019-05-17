@@ -267,7 +267,7 @@ sub set {
 
 	     $value->count == 1 or croak("Field $name allows only a single value");
 
-	     my $setobj   = DBR::Query::Part::Set->new( $field, $value ) or return $self->_error('failed to create set object');
+         my $setobj   = DBR::Query::Part::Set->new( $field, $value ) or return $self->_error('failed to create set object');
 
 	     push @sets, $setobj;
        };
@@ -310,8 +310,6 @@ sub force_index {
     $self->[f_query]->force_index($index_name);
     return $self;
 }
-
-
 
 sub order_by {
     my $self = shift;
@@ -441,5 +439,7 @@ sub _lookuphash{
 
       return \%lookup;
 }
+
+sub _session { $_[0][f_query]->_session }
 
 1;
