@@ -87,4 +87,16 @@ is (
     'datetime recorded properly from iso8601 (w/ zulu tz)',
 );
 
+my $album = $dbh->album->where( rating => 'fair' )->next;
+is $album->rating->handle, 'fair', 'query by enum handle';
+
+$album = $dbh->album->where( rating => 500 )->next;
+is $album->rating->handle, 'fair', 'query by enum id';
+
+$album->rating('sucks');
+is $album->rating->handle, 'sucks', 'set enum with handle';
+
+$album->rating(600);
+is $album->rating->handle, 'poor', 'set enum with id';
+
 done_testing();
