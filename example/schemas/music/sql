@@ -2,7 +2,7 @@
 CREATE TABLE artist (
   artist_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(250),
-  genre int,
+  genre smallint unsigned,
   status int,
   royalty_rate double,
   date_founded datetime
