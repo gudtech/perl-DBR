@@ -9,8 +9,9 @@ $| = 1;
 use lib './lib';
 use t::lib::Test;
 use Test::More;
+use Test::Exception;
 
-my $dbr = setup_schema_ok('music');
+my $dbr = setup_schema_ok({ schema => 'music', use_exceptions => 1 });
 
 my $dbh = $dbr->connect('music');
 ok($dbh, 'dbr connect');
@@ -87,6 +88,18 @@ is (
     'datetime recorded properly from iso8601 (w/ zulu tz)',
 );
 
+throws_ok { $dbh->album->where( rating => 501 )->next }
+    qr/invalid value/i, 'query throws on non-existent enum id';
+
+throws_ok { $dbh->album->where( rating => 'gobbledygook' )->next }
+    qr/invalid value/i, 'query throws on non-existent enum handle';
+
+throws_ok { $dbh->album->where( rating => 10 )->next }
+    qr/invalid value/i, 'query throws on non-mapped enum id';
+
+throws_ok { $dbh->album->where( rating => 'blues' )->next }
+    qr/invalid value/i, 'query throws on non-mapped enum handle';
+
 my $album = $dbh->album->where( rating => 'fair' )->next;
 is $album->rating->handle, 'fair', 'query by enum handle';
 
@@ -98,5 +111,17 @@ is $album->rating->handle, 'sucks', 'set enum with handle';
 
 $album->rating(600);
 is $album->rating->handle, 'poor', 'set enum with id';
+
+throws_ok { $album->rating(501) }
+    qr/invalid value/i, 'set throws on non-existent enum id';
+
+throws_ok { $album->rating('gobbledygook') }
+    qr/invalid value/i, 'set throws on non-existent enum handle';
+
+throws_ok { $album->rating(10) }
+    qr/invalid value/i, 'set throws on non-mapped enum id';
+
+throws_ok { $album->rating('blues') }
+    qr/invalid value/i, 'set throws on non-mapped enum handle';
 
 done_testing();

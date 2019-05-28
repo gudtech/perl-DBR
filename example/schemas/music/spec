@@ -1,4 +1,7 @@
 schema=music	table=artist	field=royalty_rate	cmd=TRANSLATOR	translator=PERCENT
+schema=music	table=artist	field=genre	cmd=TRANSLATOR	translator=ENUM
+schema=music	table=artist	field=genre	cmd=ENUMOPT	handle=rock	override_id=10	name=Rock
+schema=music	table=artist	field=genre	cmd=ENUMOPT	handle=blues	override_id=20	name=Blues
 schema=music	table=album	field=artist_id	cmd=RELATION	reltable=artist	relfield=artist_id	relname=artist	reverse_name=albums	type=CHILDOF
 schema=music	table=album	field=rating	cmd=TRANSLATOR	translator=ENUM
 schema=music	table=album	field=rating	cmd=ENUMOPT	handle=lv_evry_sec	override_id=100	name=Loved Every Second
