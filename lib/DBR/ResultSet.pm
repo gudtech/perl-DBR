@@ -318,6 +318,25 @@ sub force_index {
     return $self;
 }
 
+=head2 $resultset->nowait($millisecond_limit)
+
+The primary intention for this method is to provide a way to fail immediately
+if a locked row is encountered as opposed to waiting around for the lock to
+resolve.  Note that an error I<is> thrown once you attempt to access a row from
+the resultset that is locked, so you'll likely want to employ error catching to
+handle that as appropriate for your use case.
+
+See L<https://mysqlserverteam.com/mysql-8-0-1-using-skip-locked-and-nowait-to-handle-hot-rows/>
+for a more in-depth explanation.
+
+The method takes an optional C<$millisecond_limit> argument.  This is provided
+because NOWAIT keyword support was added to MySQL in version 8.0.1, so we have to
+emulate that functionality for earlier versions with a very small query max
+execution time.  C<$millisecond_limit> defaults to a reasonable value if not
+provided.
+
+=cut
+
 sub nowait {
     my ($self, $millisecond_limit) = @_;
 
@@ -331,6 +350,8 @@ sub nowait {
         my $optimizer_hints = $self->[f_query]->optimizer_hints
             || DBR::Query::Part::OptimizerHints->new;
 
+        # MySQL needs some minimal amount of time to determine if the result of the query
+        # is actually locked, so we set a reasonable lower bound on $millisecond_limit.
         my $millisecond_limit = max(
             $millisecond_limit // MIN_MAX_EXECUTION_TIME, MIN_MAX_EXECUTION_TIME);
         $optimizer_hints->children(
