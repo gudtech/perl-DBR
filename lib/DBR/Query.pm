@@ -120,6 +120,15 @@ sub offset{
   return $self;
 }
 
+sub optimizer_hints {
+    my $self = shift;
+
+    exists( $_[0] ) or return $self->{optimizer_hints};
+    $self->{optimizer_hints} = shift;
+
+    return $self;
+}
+
 sub _limit_clause {
     my $self = shift;
     my ($limit, $offset) = @{ $self }{ 'limit', 'offset' };

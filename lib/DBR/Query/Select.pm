@@ -12,7 +12,7 @@ use Carp;
 use DBR::Record::Maker;
 use Scalar::Util 'weaken';
 
-sub _params    { qw (fields tables where builder limit offset orderby lock quiet_error) }
+sub _params    { qw (fields tables where builder limit offset orderby lock quiet_error optimizer_hints) }
 sub _reqparams { qw (fields tables) }
 sub _validate_self{ 1 } # If I exist, I'm valid
 
@@ -40,10 +40,11 @@ sub sql{
       my $conn   = $self->instance->connect('conn') or return $self->_error('failed to connect');
       my $sql;
 
+      my $optimizer_hints = $self->optimizer_hints ? $self->optimizer_hints->sql($conn) : '';
       my $tables = join(',', map { $_->sql( $conn ) } @{$self->{tables}} );
       my $fields = join(',', map { $_->sql( $conn ) } @{$self->{fields}} );
 
-      $sql = "SELECT $fields FROM $tables";
+      $sql = "SELECT $optimizer_hints$fields FROM $tables";
       if ($self->{force_index}) {
           my ($prefix, $postfix) = $conn->force_index_syntax;
           $sql .= ' ' . $prefix . $conn->quote_identifier($self->{force_index}) . ($postfix // '');
