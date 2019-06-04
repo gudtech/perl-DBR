@@ -6,6 +6,11 @@ use base 'DBR::Common';
 use DBR::Misc::Dummy;
 use Carp;
 use Scalar::Util 'weaken';
+use List::Util 'max';
+use DBR::Query::Part::OptimizerHints;
+use DBR::Query::Part::OptimizerHints::MaxExecutionTime;
+use DBI::Const::GetInfoType;
+
 use constant ({
 	       f_next      => 0,
 	       f_state     => 1,
@@ -20,8 +25,10 @@ use constant ({
 
 	       FIRST  => \&_first,
 	       DUMMY  => bless([],'DBR::Misc::Dummy'),
-	      });
 
+           # Max execution time is tripped occasionally if lower
+           MIN_MAX_EXECUTION_TIME => 10,
+	      });
 
 sub new {
       my ( $package, $query, $splitval ) = @_;
@@ -308,6 +315,34 @@ sub force_index {
     my $index_name = shift;
 
     $self->[f_query]->force_index($index_name);
+    return $self;
+}
+
+sub nowait {
+    my ($self, $millisecond_limit) = @_;
+
+    my $conn = $self->[f_query]->instance->getconn;
+    my $dbms_name = $conn->{dbh}->get_info($GetInfoType{SQL_DBMS_NAME});
+    my $dbms_version = $conn->{dbh}->get_info($GetInfoType{SQL_DBMS_VER});
+
+    if ($dbms_name eq 'MySQL' && $dbms_version =~ /^5\.7/) {
+        # Emulating MySQL 8+ NOWAIT with max execution time optimizer hint
+
+        my $optimizer_hints = $self->[f_query]->optimizer_hints
+            || DBR::Query::Part::OptimizerHints->new;
+
+        my $millisecond_limit = max(
+            $millisecond_limit // MIN_MAX_EXECUTION_TIME, MIN_MAX_EXECUTION_TIME);
+        $optimizer_hints->children(
+            DBR::Query::Part::OptimizerHints::MaxExecutionTime->new($millisecond_limit));
+
+        $self->[f_query]->optimizer_hints($optimizer_hints);
+    }
+    # TODO: Implement support for MySQL 8+ NOWAIT keyword
+    else {
+        $self->_error("nowait not supported for $dbms_name $dbms_version");
+    }
+
     return $self;
 }
 
