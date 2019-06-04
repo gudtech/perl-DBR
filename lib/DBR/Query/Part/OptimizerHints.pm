@@ -7,7 +7,26 @@
 package DBR::Query::Part::OptimizerHints;
 
 use strict;
+
+=head1 NAME
+
+DBR::Query::Part::OptimizerHints
+
+=head1 SYNOPSIS
+
+Support for MySQL optimizer hints.
+
+=cut
+
 use base 'DBR::Query::Part';
+
+=head1 CONSTRUCTOR
+
+=head2 new(@hints)
+
+Create object to hold optimizer hints.  Can privide C<@hints> list now or use C<push> later.
+
+=cut
 
 sub new {
     my $package = shift;
@@ -19,6 +38,12 @@ sub new {
     return bless([@_], $package);
 }
 
+=head2 $optimizer_hints->push($hint)
+
+Add C<$hint> to list of optimizer hints.
+
+=cut
+
 sub push {
     my ($self, $hint) = @_;
 
@@ -26,6 +51,12 @@ sub push {
 
     return $self;
 }
+
+=head2 children(@hints_to_set)
+
+Gets list of hints if no argument is provided or sets list of hints, if provided.
+
+=cut
 
 sub children {
     my ($self, @hints_to_set) = @_;
@@ -38,6 +69,12 @@ sub children {
 
     return @$self;
 }
+
+=head2 sql
+
+Generate SQL for optimizer hints in this object.
+
+=cut
 
 sub sql {
     my ($self, $conn) = @_;

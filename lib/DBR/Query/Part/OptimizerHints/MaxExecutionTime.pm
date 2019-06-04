@@ -7,7 +7,28 @@
 package DBR::Query::Part::OptimizerHints::MaxExecutionTime;
 
 use strict;
+
+=head1 NAME
+
+DBR::Query::Part::OptimizerHints::MaxExecutionTime
+
+=head1 SYNOPSIS
+
+Support for MAX_EXECUTION_TIME optimizer hint that limits the time that MySQL
+will spend executing a query before throwing an error.  Generally useful if
+you don't want to wait for locks to resolve.
+
+=cut
+
 use base 'DBR::Query::Part::OptimizerHints';
+
+=head1 CONSTRUCTOR
+
+=head2 new($millisecond_limit)
+
+Create hint with C<$millisecond_limit> max execution time limit.
+
+=cut
 
 sub new {
     my ($package, $millisecond_limit) = @_;
@@ -18,6 +39,11 @@ sub new {
     return bless(\$millisecond_limit, $package);
 }
 
+=head2 sql
+
+Generate SQL for this optimizer hint.
+
+=cut
 
 sub sql { return 'MAX_EXECUTION_TIME(' . _millisecond_limit($_[0]) . ')' }
 
