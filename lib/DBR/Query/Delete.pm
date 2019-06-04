@@ -20,10 +20,11 @@ sub sql{
 
       my $conn   = $self->instance->connect('conn') or return $self->_error('failed to connect');
       my $sql;
+      my $optimizer_hints = $self->optimizer_hints ? $self->optimizer_hints->sql($conn) : '';
       my $tables = join(',', map { $_->sql( $conn ) } @{$self->{tables}} );
       my $sets   = join(',', map { $_->sql( $conn ) } @{$self->{sets}}   );
 
-      $sql = "DELETE FROM $tables";
+      $sql = "DELETE ${optimizer_hints}FROM $tables";
       $sql .= ' WHERE ' . $self->{where}->sql($conn) if $self->{where};
       $sql .= ' LIMIT ' . $self->_limit_clause       if $self->{limit} || $self->{offset};
 

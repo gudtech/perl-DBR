@@ -75,6 +75,7 @@ sub sql{
 
       my $conn   = $self->instance->connect('conn') or return $self->_error('failed to connect');
       my $sql;
+      my $optimizer_hints = $self->optimizer_hints ? $self->optimizer_hints->sql($conn) : '';
       my $tables = join(',', map {$_->sql($conn)} @{$self->{tables}} );
 
       my @fields;
@@ -84,7 +85,7 @@ sub sql{
 	    push @values, $_->value->sql( $conn );
       }
 
-      $sql = "INSERT INTO $tables (" . join (', ', @fields) . ') values (' . join (', ', @values) . ')';
+      $sql = "INSERT INTO $optimizer_hints$tables (" . join (', ', @fields) . ') values (' . join (', ', @values) . ')';
 
       $sql .= ' WHERE ' . $self->{where}->sql( $conn ) if $self->{where};
       $sql .= ' FOR UPDATE'                            if $self->{lock} && $conn->can_lock;
