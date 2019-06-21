@@ -8,7 +8,7 @@ $| = 1;
 
 use lib './lib';
 use t::lib::Test;
-use Test::More tests => 44;
+use Test::More;
 
 # As always, it's important that the sample database is not tampered with, otherwise our tests will fail
 my $dbr = setup_schema_ok({ schema => 'music', use_exceptions => 1 });
@@ -99,11 +99,24 @@ ok($rv, 'v1 insert');
 $rv = $dbh->track->insert( album_id => 2, name => 'Track BA6' );
 ok($rv, 'v2 insert');
 
+$rv = $dbh->track->insert( {album_id => 2, name => 'Track BA7'} );
+ok($rv, 'v2 insert hashref');
+
+$rv = $dbh->track->insert( [{album_id => 2, name => 'Track BA8'}, {album_id => 2, name => 'Track BA9'}] );
+ok($rv, 'v2 multi insert ');
+
+eval { $dbh->track->insert( [{album_id => 2, name => 'Track BA10'}, {album_id => 2}] ) };
+ok($@ =~ /Invalid number of values/i, 'v2 multi insert fails appropriately' . $@);
+
+eval { $dbh->track->insert( {album_id => 2, name => 'Track BA10'}, {album_id => 2} ) };
+ok($@ =~ /Invalid number of arguments/i, 'v2 multi insert fails appropriately with non-arrayref' . $@);
+
+
 # No point in testing v1 bogus insert... it doesn't know anything about the table
 
 # v2 - bogus inserts
 eval{ $dbh->track->insert( name => 'Track XXX' ) };                     # album_id defined as NOT NULL
-ok($@ =~ /Missing field/i, 'v2 insert w/o required field throws exeption');
+ok($@ =~ /Missing field/i, 'v2 insert w/o required field throws exeption ' );
 
 eval { $dbh->track->insert( album_id => 2, name => undef ) };           # name is defined as NOT NULL
 ok($@ =~ /invalid value/i, 'v2 insert w/ disallowed undef throws exeption');
@@ -132,3 +145,5 @@ eval { $dbh->track->parse( 'album_id' => '' ) };
 ok($@ =~ /invalid value/i, 'parse a regular numeric field w/ illegal value B');
 eval { $dbh->track->parse( 'album_id' => 'whybother' ) };
 ok($@ =~ /invalid value/i, 'parse a regular numeric field w/ illegal value C');
+
+done_testing;

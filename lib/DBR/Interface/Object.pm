@@ -110,31 +110,60 @@ sub where{
 
 
 sub insert {
-      my $self = shift;
-      my %fields = @_;
+    my $self = shift;
 
-      my $table = $self->{table};
-      my @sets;
+    my $valuesets;
 
-      foreach my $fieldname (keys %fields){
+    if (ref($_[0]) eq 'ARRAY') {
+        $valuesets = shift;
+        scalar(@_) && croak "Invalid number of arguments";
+        # [
+        #     { foo => 1, ... },
+        #     { foo => 2, ... },
+        #     ...
+        # ]
+    }elsif( ref($_[0]) eq 'HASH' ){
+        $valuesets = [ shift ];
+        scalar(@_) && croak "Invalid number of arguments";
+    }else {
+        $valuesets = [ { @_ } ];
+    }
 
- 	    my $field = $table->get_field( $fieldname ) or croak "invalid field $fieldname";
- 	    my $value = $field->makevalue( $fields{ $fieldname } ) or croak "failed to build value object for $fieldname";
+    my $table = $self->{table};
 
-	    my $set = DBR::Query::Part::Set->new($field,$value) or confess 'failed to create set object';
-	    push @sets, $set;
-      }
+    my $offsets = 0;
+    my %fields;
+    my @valuesets_out;
 
-      my $query = DBR::Query::Insert->new(
-					  instance => $self->{instance},
-					  session  => $self->{session},
-					  sets     => \@sets,
-					  tables   => $table,
-					 ) or confess 'failed to create query object';
+    for my $valueset (@$valuesets){
+        ref($valueset) eq 'HASH' or croak "valueset must be a HASH";
 
-      return $query->run( void => !defined(wantarray) );
+        my @valueset_out;
+        foreach my $fieldname (keys %$valueset) {
+            my $f = $fields{ $fieldname } //= do {
+                my $field = $table->get_field($fieldname) or croak "invalid field $fieldname";
+                {
+                    offset => $offsets++,
+                    field  => $field,
+                }
+            };
+
+            my $value = $f->{field}->makevalue( $valueset->{ $fieldname } ) or croak "failed to build value object for $fieldname";
+            $valueset_out[ $f->{offset} ] = $value;
+        }
+        push @valuesets_out, \@valueset_out;
+    }
+
+    my $query = DBR::Query::Insert->new(
+                  instance  => $self->{instance},
+                  session   => $self->{session},
+                  fields    => [ map { $_->{field} } sort { $a->{offset} <=> $b->{offset} } values %fields ],
+                  valuesets => \@valuesets_out,
+                  tables    => $table,
+                 ) or confess 'failed to create query object';
+
+    return $query->run( void => !defined(wantarray) );
 }
-
 
 #Fetch by Primary key
 sub get{

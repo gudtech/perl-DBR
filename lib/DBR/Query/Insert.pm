@@ -10,21 +10,53 @@ use strict;
 use base 'DBR::Query';
 use Carp;
 
-sub _params    { qw (sets tables where limit quiet_error) }
-sub _reqparams { qw (sets tables) }
+sub _params    { qw (fields valuesets tables where limit quiet_error) }
+sub _reqparams { qw (fields valuesets tables) }
 
-sub sets{
+sub fields{
       my $self = shift;
-      exists( $_[0] )  or return wantarray?( @$self->{sets} ) : $self->{sets} || undef;
-      my @sets = $self->_arrayify(@_);
-      scalar(@sets) || croak('must provide at least one set');
+      exists( $_[0] ) or return $self->{fields};
 
-      for (@sets){
-	    ref($_) eq 'DBR::Query::Part::Set' || croak('arguments must be Sets');
+      my $fields = shift;
+      ref($fields) eq 'ARRAY' or croak('fields must be an arrayref');
+      scalar(@$fields) || croak('must provide at least one field');
+
+      for (@$fields){
+            ref($_) =~ /^DBR::Config::Field/ || croak('arguments must be Fields');
       }
       
-      $self->{sets} = \@sets;
-      
+      $self->{fields} = $fields;
+      $self->{valuesets} = [];
+
+      $self->_check_fields;
+
+      return 1;
+}
+
+sub valuesets{
+      my $self = shift;
+      exists( $_[0] ) or return $self->{valuesets};
+
+      my $valuesets = shift;
+      ref($valuesets) eq 'ARRAY' or croak('valuesets must be an arrayref');
+      scalar(@$valuesets) || croak('must provide at least one value');
+
+      my $fieldcount = scalar(@{$self->fields});
+
+      for my $valueset (@$valuesets){
+            ref($valueset) eq 'ARRAY' or croak "valueset must be an arrayref";
+            (scalar(@$valueset) == $fieldcount) || croak "Invalid number of values specified";
+
+            for my $value (@$valueset) {
+                  (ref($value) eq 'DBR::Query::Part::Value') or croak('arguments must be Values (' . ref($value) . ')');
+
+                  # ideally we would check each value against the field offset to make sure that it matches
+                  # but Query::Part::Set doesn't do this either, and it's not really an SQL injection risk
+            }
+      }
+
+      $self->{valuesets} = $valuesets;
+
       $self->_check_fields;
 
       return 1;
@@ -36,21 +68,25 @@ sub _check_fields{
       # Make sure we have sets for all required fields
       # It may be slightly more efficient to enforce this in ::Interface::Object->insert, but it seems more correct here.
 
-      return 0 unless $self->{sets} && $self->{tables};
+      return 0 unless $self->{fields} && $self->{valuesets} && $self->{tables};
 
-      my %fids = map { $_->field->field_id => 1 } grep { defined $_->field->field_id } @{ $self->{sets} };
-      
+      my %fids = map { $_->field_id => 1 } grep { defined $_->field_id } @{ $self->{fields} };
+
       my $reqfields = $self->primary_table->req_fields();
       my @missing;
       foreach my $field ( grep { !$fids{ $_->field_id } } @$reqfields ){
+
             if ( defined ( my $v = $field->default_val ) ){
                   my $value = $field->makevalue( $v ) or croak "failed to build value object for " . $field->name;
-                  my $set = DBR::Query::Part::Set->new($field,$value) or confess 'failed to create set object';
-                  push @{ $self->{sets} }, $set;
+                  push @{ $self->{fields} }, $field;
+
+                  for my $valueset (@{$self->{valuesets}}){
+                        push @$valueset, $value; # no need to clone this
+                  }
             }else{
                   push @missing, $field;
             }
-      
+
       }
       if(@missing){
 	    croak "Invalid insert. Missing fields (" .
@@ -63,7 +99,8 @@ sub _validate_self{
       my $self = shift;
 
       @{$self->{tables}} == 1 or croak "Must have exactly one table";
-      $self->{sets} or croak "Must have at least one set";
+      $self->{fields} or croak "Must have at least one field";
+      $self->{valuesets} or croak "Must have at least one valueset";
       
       $self->_check_fields unless $self->{_fields_checked};
       
@@ -78,14 +115,12 @@ sub sql{
       my $optimizer_hints = $self->optimizer_hints ? $self->optimizer_hints->sql($conn) : '';
       my $tables = join(',', map {$_->sql($conn)} @{$self->{tables}} );
 
-      my @fields;
-      my @values;
-      for ( @{$self->{sets}} ) {
-	    push @fields, $_->field->sql( $conn );
-	    push @values, $_->value->sql( $conn );
-      }
+      $sql = "INSERT INTO $optimizer_hints$tables (" . join (', ', map { $_->sql( $conn ) } @{$self->fields} ) . ') values ';
 
-      $sql = "INSERT INTO $optimizer_hints$tables (" . join (', ', @fields) . ') values (' . join (', ', @values) . ')';
+      my $ct = -1;
+      for my $valueset (@{$self->valuesets}){
+            $sql .= ($ct++ ? '' : ',') . '(' . join (',', map { $_->sql( $conn ) } @{$valueset} ) . ')';
+      }
 
       $sql .= ' WHERE ' . $self->{where}->sql( $conn ) if $self->{where};
       $sql .= ' FOR UPDATE'                            if $self->{lock} && $conn->can_lock;
