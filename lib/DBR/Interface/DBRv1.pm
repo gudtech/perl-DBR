@@ -136,7 +136,8 @@ sub insert {
                                                  instance => $self->{instance},
 						 name    => $table,
 						) or return $self->_error('Failed to create table object');
-      my @sets;
+      my @fields;
+	  my @values;
       foreach my $field (keys %$fields){
 	    my $value = $fields->{$field};
 
@@ -146,15 +147,15 @@ sub insert {
 							) or return $self->_error('Failed to create field object');
 
 	    my $valobj = $self->_value($value) or return $self->_error('_value failed');
-
-	    my $set = DBR::Query::Part::Set->new($fieldobj,$valobj) or return $self->_error('failed to create set object');
-	    push @sets, $set;
+		push @fields, $fieldobj;
+		push @values, $valobj;
       }
 
       my $query = DBR::Query::Insert->new(
 					  instance => $self->{instance},
 					  session  => $self->{session},
-					  sets   => \@sets,
+					  fields   => \@fields,
+		  			  valuesets => [\@values],
 					  quiet_error => $params{-quiet} ? 1:0,
 					  tables => $Qtable,
 					 ) or return $self->_error('failed to create query object');
