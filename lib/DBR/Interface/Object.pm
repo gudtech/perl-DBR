@@ -151,6 +151,12 @@ sub insert {
             my $value = $f->{field}->makevalue( $valueset->{ $fieldname } ) or croak "failed to build value object for $fieldname";
             $valueset_out[ $f->{offset} ] = $value;
         }
+
+        # Need to test for value definedness because valuesets that come after valuesets with a
+        # greater number of fields will have value undef for missing fields with offset lesser than
+        # valid fields.
+        (scalar(grep { defined } @valueset_out) == $offsets) || croak "Invalid number of values specified";
+
         push @valuesets_out, \@valueset_out;
     }
 
