@@ -117,9 +117,9 @@ sub sql{
 
       $sql = "INSERT INTO $optimizer_hints$tables (" . join (', ', map { $_->sql( $conn ) } @{$self->fields} ) . ') values ';
 
-      my $ct = -1;
+      my $ct = 0;
       for my $valueset (@{$self->valuesets}){
-            $sql .= ($ct++ ? '' : ',') . '(' . join (',', map { $_->sql( $conn ) } @{$valueset} ) . ')';
+            $sql .= ($ct++ ? ',' : '') . '(' . join (',', map { $_->sql( $conn ) } @{$valueset} ) . ')';
       }
 
       $sql .= ' WHERE ' . $self->{where}->sql( $conn ) if $self->{where};
