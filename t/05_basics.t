@@ -105,6 +105,13 @@ ok($rv, 'v2 insert hashref');
 $rv = $dbh->track->insert( [{album_id => 2, name => 'Track BA8'}, {album_id => 2, name => 'Track BA9'}] );
 ok($rv, 'v2 multi insert ');
 
+$rv = $dbh->track->insert( [
+    {album_id => 2, name => 'Track BA8'},
+    {album_id => 2, name => 'Track BA9'},
+    {album_id => 2, name => 'Track BA10'},
+] );
+ok($rv, 'v2 multi insert 3+ values comma logic regression test');
+
 eval { $dbh->track->insert( [{album_id => 2, name => 'Track BA10'}, {album_id => 2}] ) };
 ok($@ =~ /Invalid number of values/i, 'v2 multi insert fails appropriately' . $@);
 
