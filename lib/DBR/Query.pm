@@ -171,11 +171,11 @@ sub transpose{
       my $class = __PACKAGE__ . '::' . $module;
       my %params;
       map { $params{ $_ } = $self->{$_} if $self->{$_} } (qw'instance session scope',$self->_params);
-      
+
       return $class->new(
-			 %params,
-			 @_, # extra params
-			) or croak "Failed to create new $class object";
+          %params,
+          @_, # extra params
+      ) || croak "Failed to create new $class object";
 }
 
 sub child_query{

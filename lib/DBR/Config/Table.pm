@@ -260,9 +260,9 @@ sub conf_instance {
       my $guid = $TABLES_BY_ID{  $self->{table_id} }->{conf_instance_guid};
 
       return DBR::Config::Instance->lookup(
-					   session => $self->{session},
-					   guid   => $guid
-					  ) or return $self->_error('Failed to fetch conf instance');
+          session => $self->{session},
+          guid   => $guid
+      ) || $self->_error('Failed to fetch conf instance');
 }
 
 sub sql_instance {

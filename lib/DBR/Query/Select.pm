@@ -129,9 +129,9 @@ sub get_record_obj{
 
       # Only make the record-maker object once per query. Even split queries should be able to share the same one.
       return $self->{recordobj} ||= DBR::Record::Maker->new(
-							    session  => $self->{session},
-							    query    => $self,  # This value is not preserved by the record maker, thus no memory leak
-							   ) or confess ('failed to create record class');
+          session  => $self->{session},
+          query    => $self,  # This value is not preserved by the record maker, thus no memory leak
+      ) || confess ('failed to create record class');
 }
 
 sub DESTROY{

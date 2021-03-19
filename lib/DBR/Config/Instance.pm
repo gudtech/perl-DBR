@@ -252,11 +252,11 @@ sub connect{
       }elsif (lc($flag) eq 'conn') {
 	    return $self->getconn;
       } else {
-	    return DBR::Handle->new(
-				    conn     => $self->getconn,
-				    session  => $self->{session},
-				    instance => $self,
-				   ) or confess 'Failed to create Handle object';
+        return DBR::Handle->new(
+            conn     => $self->getconn,
+            session  => $self->{session},
+            instance => $self,
+        ) || confess 'Failed to create Handle object';
       }
 }
 
