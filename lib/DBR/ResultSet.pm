@@ -340,11 +340,9 @@ provided.
 sub nowait {
     my ($self, $millisecond_limit) = @_;
 
-    my $conn = $self->[f_query]->instance->getconn;
-    my $dbms_name = $conn->{dbh}->get_info($GetInfoType{SQL_DBMS_NAME});
-    my $dbms_version = $conn->{dbh}->get_info($GetInfoType{SQL_DBMS_VER});
+    my ($can_nowait, $nowait_message) = $self->can_nowait;
 
-    if ($dbms_name eq 'MySQL' && $dbms_version =~ /^5\.7/) {
+    if ($can_nowait) {
         # Emulating MySQL 8+ NOWAIT with max execution time optimizer hint
 
         my $optimizer_hints = $self->[f_query]->optimizer_hints
@@ -359,12 +357,27 @@ sub nowait {
 
         $self->[f_query]->optimizer_hints($optimizer_hints);
     }
-    # TODO: Implement support for MySQL 8+ NOWAIT keyword
     else {
-        $self->_error("nowait not supported for $dbms_name $dbms_version");
+        $self->_error($nowait_message);
     }
 
     return $self;
+}
+
+sub can_nowait {
+    my ($self) = @_;
+
+    my $conn = $self->[f_query]->instance->getconn;
+    my $dbms_name = $conn->{dbh}->get_info($GetInfoType{SQL_DBMS_NAME});
+    my $dbms_version = $conn->{dbh}->get_info($GetInfoType{SQL_DBMS_VER});
+
+    if ($dbms_name eq 'MySQL' && $dbms_version =~ /^5\.7/) {
+        return (1, undef);
+    }
+    # TODO: Implement support for MySQL 8+ NOWAIT keyword
+    else {
+        return (0, "nowait not supported for $dbms_name $dbms_version");
+    }
 }
 
 sub order_by {
