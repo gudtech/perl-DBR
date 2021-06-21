@@ -12,36 +12,36 @@ use DBR::Query::Part::OptimizerHints::MaxExecutionTime;
 use DBI::Const::GetInfoType;
 
 use constant ({
-	       f_next      => 0,
-	       f_state     => 1,
-	       f_rowcache  => 2,
-	       f_query     => 3,
-	       f_count     => 4,
-	       f_splitval  => 5,
+           f_next      => 0,
+           f_state     => 1,
+           f_rowcache  => 2,
+           f_query     => 3,
+           f_count     => 4,
+           f_splitval  => 5,
 
-	       stCLEAN  => 1,
-	       stACTIVE => 2,
-	       stMEM    => 3,
+           stCLEAN  => 1,
+           stACTIVE => 2,
+           stMEM    => 3,
 
-	       FIRST  => \&_first,
-	       DUMMY  => bless([],'DBR::Misc::Dummy'),
+           FIRST  => \&_first,
+           DUMMY  => bless([],'DBR::Misc::Dummy'),
 
            # Max execution time is tripped occasionally if lower
            MIN_MAX_EXECUTION_TIME => 10,
-	      });
+          });
 
 sub new {
       my ( $package, $query, $splitval ) = @_;
 
       #the sequence of this MUST line up with the fields above
       return bless( [
-		     FIRST,    # next
-		     stCLEAN,  # state
-		     [],     # rowcache - placeholder
-		     $query,   # query
-		     undef,    # count
-		     $splitval,# splitval
-		     ], $package );
+             FIRST,    # next
+             stCLEAN,  # state
+             [],     # rowcache - placeholder
+             $query,   # query
+             undef,    # count
+             $splitval,# splitval
+             ], $package );
 }
 
 
@@ -62,9 +62,9 @@ sub dump{
       my $code = 'while(my $rec = $self->next){ push @out, {' . "\n";
 
       foreach my $field ( @fields){
-	    my $f = $field;
-	    $f =~ s/\./->/g;
-	    $code .= "'$field' => \$rec->$f,\n";
+        my $f = $field;
+        $f =~ s/\./->/g;
+        $code .= "'$field' => \$rec->$f,\n";
       }
 
       $code .= "}}";
@@ -80,8 +80,8 @@ sub TO_JSON {
       my $self = shift;
 
       return $self->dump(
-			 map { $_->name } @{ $self->[f_query]->primary_table->fields }
-			);
+             map { $_->name } @{ $self->[f_query]->primary_table->fields }
+            );
 
 } #Dump it all
 
@@ -89,14 +89,14 @@ sub reset{
       my $self = shift;
 
       if ($self->[f_state] == stMEM){
-	    return $self->_mem_iterator; #rowcache is already full, reset the mem iterator
+        return $self->_mem_iterator; #rowcache is already full, reset the mem iterator
       }
 
       if( $self->[f_state] == stACTIVE ){
-	    $self->[f_query]->reset; # calls finish
-	    $self->[f_rowcache] = []; #not sure if this is necessary or not
-	    $self->[f_state] = stCLEAN;
-	    $self->[f_next]  = FIRST;
+        $self->[f_query]->reset; # calls finish
+        $self->[f_rowcache] = []; #not sure if this is necessary or not
+        $self->[f_state] = stCLEAN;
+        $self->[f_next]  = FIRST;
       }
 
       return 1;
@@ -146,53 +146,53 @@ sub _db_iterator{
       $self->[f_state] = stACTIVE;
 
       if( $self->[f_query]->instance->getconn->can_trust_execute_rowcount ){ # HERE - yuck... assumes this is same connection as the sth
-	    $self->[f_count] = $rv + 0;
-	    $self->[f_query]->_logDebug3('ROWS: ' . ($rv + 0));
+        $self->[f_count] = $rv + 0;
+        $self->[f_query]->_logDebug3('ROWS: ' . ($rv + 0));
       }
 
-     
+
 
       # IMPORTANT NOTE: circular reference hazard
       weaken ($self); # Weaken the refcount
 
       my $endsub = sub {
-	    defined($self) or return DUMMY; # technically this could be out of scope because it's a weak ref
+        defined($self) or return DUMMY; # technically this could be out of scope because it's a weak ref
 
-	    $self->[f_count] ||= $sth->rows || 0;
-	    $self->[f_next]  = FIRST;
-	    $self->[f_state] = stCLEAN; # If we get here, then we hit the end, and no ->finish is required
+        $self->[f_count] ||= $sth->rows || 0;
+        $self->[f_next]  = FIRST;
+        $self->[f_state] = stCLEAN; # If we get here, then we hit the end, and no ->finish is required
 
-	    return DUMMY; # evaluates to false
+        return DUMMY; # evaluates to false
       };
 
       my $buddy;
       my $rows  = [];
       my $commonref;
       my $getchunk = sub {
-	    $rows = $sth->fetchall_arrayref(undef,1000) || return undef; # if cache is empty, fetch more
-	    
-	    $commonref = [ @$rows ];
-	    map {weaken $_} @$commonref;
-	    $buddy = [ $commonref, $record ]; # buddy ref must contain the record object just to keep it in scope.
-	    
-	    return shift @$rows;
+        $rows = $sth->fetchall_arrayref(undef,1000) || return undef; # if cache is empty, fetch more
+
+        $commonref = [ @$rows ];
+        map {weaken $_} @$commonref;
+        $buddy = [ $commonref, $record ]; # buddy ref must contain the record object just to keep it in scope.
+
+        return shift @$rows;
       };
       # use a closure to reduce hash lookups
       # It's very important that this closure is fast.
       # This one routine has more of an effect on speed than anything else in the rest of the code
 
       $self->[f_next] = sub {
-	    bless(
-		  (
-		   [
-		   (
-		    shift(@$rows) || $getchunk->() || return $endsub->()
-		   ),
-		    $buddy
-		   ]
-		  ),
-		  $class
-		 );
+        bless(
+          (
+           [
+           (
+            shift(@$rows) || $getchunk->() || return $endsub->()
+           ),
+            $buddy
+           ]
+          ),
+          $class
+         );
       };
 
       return 1;
@@ -241,8 +241,8 @@ sub count{
       return $self->[f_count] if defined $self->[f_count];
 
       if( defined $self->[f_splitval] ){ # run automatically if we are a split query
-	    $self->_execute();
-	    return $self->[f_count];
+        $self->_execute();
+        return $self->[f_count];
       }
 
       my $cquery = $self->[f_query]->transpose('Count');
@@ -265,38 +265,38 @@ sub set {
 
        my @sets;
        foreach my $name ( keys %params ){
-	     my $field = $table->get_field( $name ) or croak "Invalid field $name";
-	     $field->alias( $alias ) if $alias;
+         my $field = $table->get_field( $name ) or croak "Invalid field $name";
+         $field->alias( $alias ) if $alias;
 
-	     $field->is_readonly && croak ("Field $name is readonly");
+         $field->is_readonly && croak ("Field $name is readonly");
 
-	     my $value = $field->makevalue( $params{ $name } );
+         my $value = $field->makevalue( $params{ $name } );
 
-	     $value->count == 1 or croak("Field $name allows only a single value");
+         $value->count == 1 or croak("Field $name allows only a single value");
 
          my $setobj   = DBR::Query::Part::Set->new( $field, $value ) or return $self->_error('failed to create set object');
 
-	     push @sets, $setobj;
+         push @sets, $setobj;
        };
 
        scalar(@sets) > 0 or croak('Must specify at least one field to set');
 
        my $update = $self->[f_query]->transpose( 'Update',
-						 sets => \@sets
-					       );
+                         sets => \@sets
+                           );
        return $update->run;
 
 }
 
 sub limit{
     my $self  = shift;
-	my $limit = int(shift) or croak "limit value is required";
-	
+    my $limit = int(shift) or croak "limit value is required";
+
     #return DBR::ResultSet->new(
-	#		$self->[f_query]->transpose('Select', limit => $limit )
-	#	);
-	$self->[f_query]->limit($limit);
-	return $self;
+    #		$self->[f_query]->transpose('Select', limit => $limit )
+    #	);
+    $self->[f_query]->limit($limit);
+    return $self;
 }
 
 sub offset {
@@ -393,9 +393,9 @@ sub where {
        my $self = shift;
 
        return DBR::ResultSet->new(
-				  $self->[f_query]->child_query( \@_ ), # Where clause
-				  $self->[f_splitval],
-				 );
+                  $self->[f_query]->child_query( \@_ ), # Where clause
+                  $self->[f_splitval],
+                 );
 }
 
 sub delete { croak "Mass delete requires explicit delete_matched_records" }
@@ -433,15 +433,15 @@ sub values {
 
       my @parts;
       foreach my $fieldname (@fieldnames){
-	    $fieldname =~ s/\./->/g; # kind of a hack, but it works
-	    push @parts , "\$_[0]->$fieldname";
+        $fieldname =~ s/\./->/g; # kind of a hack, but it works
+        push @parts , "\$_[0]->$fieldname";
       }
 
       my $code;
       if(scalar(@fieldnames) > 1){
-	    $code = ' [  ' . join(', ', @parts) . ' ]';
+        $code = ' [  ' . join(', ', @parts) . ' ]';
       }else{
-	    $code = $parts[0];
+        $code = $parts[0];
       }
 
       $code = 'sub{ push @output, ' . $code . ' }';
@@ -473,19 +473,19 @@ sub _lookuphash{
 
       my $code;
       foreach my $fieldname (@fieldnames){
-	    my @parts = split(/\.|\->/,$fieldname);
-	    map {croak "Invalid fieldname part '$_'" unless /^[A-Za-z0-9_-]+$/} @parts;
+        my @parts = split(/\.|\->/,$fieldname);
+        map {croak "Invalid fieldname part '$_'" unless /^[A-Za-z0-9_-]+$/} @parts;
 
-	    $fieldname = join('->',@parts);
+        $fieldname = join('->',@parts);
 
-	    $code .= "{ \$_->$fieldname }";
+        $code .= "{ \$_->$fieldname }";
       }
       my $part = ' @{$rows}';
 
       if($mode eq 'multi'){
-	    $code = 'map {  push @{ $lookup' . $code . ' }, $_ }' . $part;
+        $code = 'map {  push @{ $lookup' . $code . ' }, $_ }' . $part;
       }else{
-	    $code = 'map {  $lookup' . $code . ' = $_ }' . $part;
+        $code = 'map {  $lookup' . $code . ' = $_ }' . $part;
       }
       $self->[f_query]->_logDebug3($code);
 
