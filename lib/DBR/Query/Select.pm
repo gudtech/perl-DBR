@@ -12,7 +12,7 @@ use Carp;
 use DBR::Record::Maker;
 use Scalar::Util 'weaken';
 
-sub _params    { qw (fields tables where builder limit offset orderby lock quiet_error optimizer_hints) }
+sub _params    { qw (fields aggregates tables where builder limit offset orderby groupby lock quiet_error optimizer_hints) }
 sub _reqparams { qw (fields tables) }
 sub _validate_self{ 1 } # If I exist, I'm valid
 
@@ -25,8 +25,8 @@ sub fields{
 
       my $lastidx = -1;
       for (@fields){
-	    ref($_) =~ /^DBR::Config::Field/ || croak('must specify field as a DBR::Config::Field object'); # Could also be ::Anon
-	    $_->index( ++$lastidx );
+        ref($_) =~ /^DBR::Config::Field/ || croak('must specify field as a DBR::Config::Field object'); # Could also be ::Anon
+        $_->index( ++$lastidx );
       }
       $self->{last_idx} = $lastidx;
       $self->{fields}   = \@fields;
@@ -43,13 +43,17 @@ sub sql{
       my $optimizer_hints = $self->optimizer_hints ? $self->optimizer_hints->sql($conn) : '';
       my $tables = join(',', map { $_->sql( $conn ) } @{$self->{tables}} );
       my $fields = join(',', map { $_->sql( $conn ) } @{$self->{fields}} );
+      my $aggregates = join(',', $fields, map { $_->sql( $conn ) } @{$self->{aggregates}} );
 
-      $sql = "SELECT $optimizer_hints$fields FROM $tables";
+      $sql = "SELECT $optimizer_hints$aggregates FROM $tables";
       if ($self->{force_index}) {
           my ($prefix, $postfix) = $conn->force_index_syntax;
           $sql .= ' ' . $prefix . $conn->quote_identifier($self->{force_index}) . ($postfix // '');
       }
       $sql .= ' WHERE ' . $self->{where}->sql($conn) if $self->{where};
+      if (@{ $self->{groupby} || [] }) {
+          $sql .= ' GROUP BY ' . join(', ', map { $_->sql($conn) } @{ $self->{groupby} || [] });
+      }
       if (@{ $self->{orderby} || [] }) {
           $sql .= ' ORDER BY ' . join(', ', map { $_->sql($conn) } @{ $self->{orderby} || [] });
       }
@@ -75,6 +79,11 @@ sub reset {
 sub orderby {
     my $self = shift;
     exists($_[0]) ? ($self->{orderby} = $_[0]) : $self->{orderby};
+}
+
+sub groupby {
+    my $self = shift;
+    exists($_[0]) ? ($self->{groupby} = $_[0]) : $self->{groupby};
 }
 
 # HERE - it's a little funky that we are handling split queries here,

@@ -26,12 +26,12 @@ sub new {
       my %req = map {$_ => 1} $self->_reqparams;
       for my $key ( $self->_params ){
 
-	    if(  $params{$key} ){
-		  $self->$key( $params{$key} );
+        if(  $params{$key} ){
+          $self->$key( $params{$key} );
 
-	    }elsif($req{$key}){
-		  croak "$key is required";
-	    }
+        }elsif($req{$key}){
+          croak "$key is required";
+        }
       }
 
       $self->validate() or croak "Object is not valid"; # HERE - not enough info as to why
@@ -49,11 +49,11 @@ sub tables{
       my @tparts;
       my %aliasmap;
       foreach my $table (@tables){
-	    croak('must specify table as a DBR::Config::Table object') unless ref($table) =~ /^DBR::Config::Table/; # Could also be ::Anon
+        croak('must specify table as a DBR::Config::Table object') unless ref($table) =~ /^DBR::Config::Table/; # Could also be ::Anon
 
-	    my $name  = $table->name or confess 'failed to get table name';
-	    my $alias = $table->alias;
-	    $aliasmap{$alias} = $name if $alias;
+        my $name  = $table->name or confess 'failed to get table name';
+        my $alias = $table->alias;
+        $aliasmap{$alias} = $name if $alias;
       }
 
       $self->{tables}   = \@tables;
@@ -75,7 +75,7 @@ sub where{
       my $part = shift || undef;
 
       !$part || ref($part) =~ /^DBR::Query::Part::(And|Or|Compare|Subquery|Join)$/ ||
-	croak('param must be an AND/OR/COMPARE/SUBQUERY/JOIN object');
+    croak('param must be an AND/OR/COMPARE/SUBQUERY/JOIN object');
 
       $self->{where} = $part;
 
@@ -125,6 +125,15 @@ sub optimizer_hints {
 
     exists( $_[0] ) or return $self->{optimizer_hints};
     $self->{optimizer_hints} = shift;
+
+    return $self;
+}
+
+sub aggregates {
+    my $self = shift;
+
+    exists( $_[0] ) or return $self->{aggregates};
+    $self->{aggregates} = shift;
 
     return $self;
 }
@@ -183,11 +192,11 @@ sub child_query{
       my $where = shift;
 
       my $builder = $self->{builder} ||= DBR::Interface::Where->new(
-								    session       => $self->{session},
-								    instance      => $self->{instance},
+                                    session       => $self->{session},
+                                    instance      => $self->{instance},
                                                                     primary_table => $self->primary_table,
-								    tables        => $self->{tables},
-								   );
+                                    tables        => $self->{tables},
+                                   );
 
       my $ident = $builder->digest( $where );
 
@@ -232,7 +241,7 @@ sub validate{
 
       # Now check my component objects
       if($self->{where}){
-	    $self->{where}->validate( $self ) or croak "Invalid where clause";
+        $self->{where}->validate( $self ) or croak "Invalid where clause";
       }
 
       return 1;

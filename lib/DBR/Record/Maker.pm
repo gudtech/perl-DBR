@@ -18,8 +18,8 @@ sub new {
       my( $package ) = shift;
       my %params = @_;
       my $self = {
-		  session  => $params{session},
-		 };
+          session  => $params{session},
+         };
 
       bless( $self, $package ); # BS object
 
@@ -47,11 +47,11 @@ sub _prep{
       my %orig_table;
       # It's important that we preserve the specific field objects from the query. They have payloads that new ones do not.
       foreach my $field (@fields){
-	    my $field_id = $field->field_id or next; # Anon fields have no field_id
-	    my $table_id = $field->table_id;
-	    $self->{fieldmap}->{ $field_id } = $field;
+        my $field_id = $field->field_id or next; # Anon fields have no field_id
+        my $table_id = $field->table_id;
+        $self->{fieldmap}->{ $field_id } = $field;
 
-	    $orig_table{$table_id} = $field->table;
+        $orig_table{$table_id} = $field->table;
       }
 
       my %tablemap;
@@ -61,44 +61,44 @@ sub _prep{
       my @tablenames;
       foreach my $orig_table (values %orig_table){
             my $table_id = $orig_table->table_id;
-	    my $table = $orig_table->clone or return $self->_error('Failed to create table object');
+        my $table = $orig_table->clone or return $self->_error('Failed to create table object');
 
-	    my $allfields = $table->fields or return $self->_error('failed to retrieve fields for table');
+        my $allfields = $table->fields or return $self->_error('failed to retrieve fields for table');
 
-	    my @pk;
-	    #We need to check to make sure that all PK fields are included in the query results.
-	    #These are field objects, but don't use them elsewhere. They are devoid of query indexes
-	    foreach my $checkfield (@$allfields){
-		  my $field = $self->{fieldmap}->{ $checkfield->field_id };
+        my @pk;
+        #We need to check to make sure that all PK fields are included in the query results.
+        #These are field objects, but don't use them elsewhere. They are devoid of query indexes
+        foreach my $checkfield (@$allfields){
+          my $field = $self->{fieldmap}->{ $checkfield->field_id };
 
-		  if( $checkfield->is_pkey ){
-			if(!$field){
+          if( $checkfield->is_pkey ){
+            if(!$field){
                               use Data::Dumper;
-			      return $self->_error('Resultset is missing primary key field (' . $checkfield->name . ') DBG: ' .
+                  return $self->_error('Resultset is missing primary key field (' . $checkfield->name . ') DBG: ' .
                                                    Dumper(
                                                           \@fields,
                                                           $checkfield,
                                                           [keys %orig_table],
                                                           $query
                                                       ));
-			}
+            }
 
-			push @pk, $field->clone( with_index => 1 ); # Make a clean copy of the field object in case this one has an alias
-		  }else{
-			if(!$field){
-			      push @fields, $checkfield; #not in the resultset, but we should still know about it
-			      $self->{fieldmap}->{ $checkfield->field_id } = $checkfield;
-			}
-		  }
-		  $field ||= $checkfield;
-	    }
+            push @pk, $field->clone( with_index => 1 ); # Make a clean copy of the field object in case this one has an alias
+          }else{
+            if(!$field){
+                  push @fields, $checkfield; #not in the resultset, but we should still know about it
+                  $self->{fieldmap}->{ $checkfield->field_id } = $checkfield;
+            }
+          }
+          $field ||= $checkfield;
+        }
 
-	    $tablemap{$table_id} = $table;
-	    $pkmap{$table_id}    = \@pk;
+        $tablemap{$table_id} = $table;
+        $pkmap{$table_id}    = \@pk;
 
-	    my $relations = $table->relations or return $self->_error('failed to retrieve relations for table');
-	    push @allrelations, @$relations;
-	    push @tablenames, $table->name;
+        my $relations = $table->relations or return $self->_error('failed to retrieve relations for table');
+        push @allrelations, @$relations;
+        push @tablenames, $table->name;
       }
       $self->{name} = join('/',@tablenames);
 
@@ -106,52 +106,52 @@ sub _prep{
       my $instance = $query->instance or croak 'failed to fetch instance object';
 
       my $helper = DBR::Record::Helper->new(
-					    session  => $self->{session},
-					    instance => $instance,
-					    tablemap => \%tablemap,
-					    pkmap    => \%pkmap,
-					    flookup  => \%flookup,
-					    scope    => $scope,
-					    lastidx  => $query->lastidx,
-					   ) or return $self->_error('Failed to create Helper object');
+                        session  => $self->{session},
+                        instance => $instance,
+                        tablemap => \%tablemap,
+                        pkmap    => \%pkmap,
+                        flookup  => \%flookup,
+                        scope    => $scope,
+                        lastidx  => $query->lastidx,
+                       ) or return $self->_error('Failed to create Helper object');
 
       my $mode = 'rw';
       foreach my $field (@fields){
-	    my $mymode = $mode;
-	    $mymode = 'ro' if $field->is_readonly or $instance->is_readonly;
+        my $mymode = $mode;
+        $mymode = 'ro' if $field->is_readonly or $instance->is_readonly;
             my $work_clone = $field->clone( with_index => 1 ); # Make a clean copy of the field object in case this one has an alias
             $flookup{ $field->name } = $work_clone;
-	    $self->_mk_accessor(
-				mode  => $mymode,
-				field => $work_clone,
-				helper => $helper,
-			       ) or return $self->_error('Failed to create accessor');
+        $self->_mk_accessor(
+                mode  => $mymode,
+                field => $work_clone,
+                helper => $helper,
+                   ) or return $self->_error('Failed to create accessor');
       }
-      
+
       foreach my $relation (@allrelations){
-	    $self->_mk_relation(
-				relation => $relation,
-				helper   => $helper,
-			       ) or return $self->_error('Failed to create relation');
+        $self->_mk_relation(
+                relation => $relation,
+                helper   => $helper,
+                   ) or return $self->_error('Failed to create relation');
       }
 
       my $isa = qualify_to_ref( $self->{recordclass} . '::ISA');
       @{ *$isa } = ('DBR::Record::Base');
-      
-      $self->_mk_method(
-			method => 'set',
- 			helper => $helper,
- 		       ) or $self->_error('Failed to create set method');
 
       $self->_mk_method(
-			method => 'delete',
- 			helper => $helper,
- 		       ) or $self->_error('Failed to create set method');
-      
+            method => 'set',
+            helper => $helper,
+               ) or $self->_error('Failed to create set method');
+
       $self->_mk_method(
-			method => '_instance',
- 			helper => $helper,
- 		       ) or $self->_error('Failed to create set method');
+            method => 'delete',
+            helper => $helper,
+               ) or $self->_error('Failed to create set method');
+
+      $self->_mk_method(
+            method => '_instance',
+            helper => $helper,
+               ) or $self->_error('Failed to create set method');
 
       return 1;
 }
@@ -179,21 +179,21 @@ sub _mk_accessor{
 
       my $idx = $field->index;
       if(defined $idx){ #did we actually fetch this?
-	    $value = $record . '[' . $idx . ']';
+        $value = $record . '[' . $idx . ']';
       }else{
-	    $value = "\$h->getfield( $obj, \$f )";
+        $value = "\$h->getfield( $obj, \$f )";
       }
 
       my $code;
       my $trans;
       if ($trans = $field->translator){
-	    $value = "\$t->forward($value)";
+        $value = "\$t->forward($value)";
       }
 
       if($mode eq 'rw' && $field){
-	    $code = "   exists( $setvalue ) ? \$h->setfield( $record, \$f, $setvalue ) : $value   ";
+        $code = "   exists( $setvalue ) ? \$h->setfield( $record, \$f, $setvalue ) : $value   ";
       }elsif($mode eq 'ro'){
-	    $code = "   $value   ";
+        $code = "   $value   ";
       }
       $code = "sub {$code}";
 
@@ -302,14 +302,14 @@ sub DESTROY{ # clean up the temporary object from the symbol table
       my $class = $self->{recordclass};
       #$self->_logDebug2("Destroy $self->{name} ($class)");
       unshift @IDPOOL, $self->{classidx};
-      
+
       #print STDERR "DESTROY $class, $self->{classidx}\n";
-      
+
       ## Eeek, found a bug in the Symbol package.
       ## This leaks memory:
       # Symbol::delete_package($class);
       ## Have to use this instead:
-      
+
       no strict 'refs';
       my $st = *{"${class}::"}{HASH};
       for my $m (keys %$st) {

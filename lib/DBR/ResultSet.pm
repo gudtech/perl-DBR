@@ -10,6 +10,8 @@ use List::Util 'max';
 use DBR::Query::Part::OptimizerHints;
 use DBR::Query::Part::OptimizerHints::MaxExecutionTime;
 use DBI::Const::GetInfoType;
+use DBR::Query::Part::GroupBy;
+use DBR::Query::Part::Aggregate;
 
 use constant ({
            f_next      => 0,
@@ -399,6 +401,78 @@ sub order_by {
     }
 
     $self->[f_query]->orderby([ @{ $self->[f_query]->orderby || [] }, $field ]);
+    return $self;
+}
+
+sub group_by {
+    my ($self, $fields) = @_;
+
+    croak "group by field(s) required"
+        unless $fields;
+
+    my $tables = $self->[f_query]->tables;
+    my $table = $tables->[0]; # only the primary table is supported
+    my $alias = $table->alias;
+
+    my @group_bys;
+    foreach my $field ($self->_split($fields)) {
+        my $group_by;
+        unless (ref($field) eq 'DBR::Query::Part::GroupBy') {
+            my $field_o = $table->get_field($field)
+                or croak "Invalid field $field";
+            $field_o->table_alias($alias)
+                if $alias;
+
+            $field = DBR::Query::Part::GroupBy->new($field_o)
+                or return $self->_error('failed to create group by object');
+        }
+
+        push @group_bys, $field;
+    }
+
+    $self->[f_query]->groupby([@{$self->[f_query]->groupby || []}, @group_bys]);
+    $self->[f_query]->fields([map { $_->field || [] } @group_bys]);
+
+    return $self;
+}
+
+sub aggregate {
+    my ($self, $aggregates) = @_;
+
+    croak "aggregates required"
+        unless ref($aggregates) eq 'ARRAY';
+
+    my $tables = $self->[f_query]->tables;
+    my $table = $tables->[0]; # only the primary table is supported
+    my $alias = $table->alias;
+
+    my @aggregate_objs;
+    foreach my $aggregate (@$aggregates) {
+        unless (ref($aggregate) eq 'DBR::Query::Part::Aggregate') {
+            my ($function, $field) = $self->_split($aggregate);
+
+            croak "aggregate must consist of arrayref of function and field"
+                unless $function && $field;
+
+            my $field_o = $field;
+
+            unless ($field eq '*') {
+                $field_o = $table->get_field($field)
+                    or croak "Invalid field $field";
+
+                $field_o->table_alias($alias)
+                    if $alias;
+            }
+
+            $aggregate = DBR::Query::Part::Aggregate->new($function, $field_o)
+                or return $self->_error('failed to create aggregate object');
+        }
+
+        push @aggregate_objs, $aggregate;
+    }
+
+    $self->[f_query]->aggregates([@aggregate_objs]);
+
     return $self;
 }
 

@@ -29,7 +29,7 @@ DBR::Util::Logger
 
 =head1 DESCRIPTION
 
-The purpose of the Logger Object is to log script information 
+The purpose of the Logger Object is to log script information
 on a per user basis, as well as keep a transaction log of
 all DB related API Calls.
 
@@ -58,10 +58,10 @@ sub new {
 
       my $level;
       if ($in{-logLevel}) {
-	    $level = $in{-logLevel}
+        $level = $in{-logLevel}
       } else {
-	    $level = 'none' if $in{-noLog};
-	    $level = 'debug' if $in{-bDebug};
+        $level = 'none' if $in{-noLog};
+        $level = 'debug' if $in{-bDebug};
       }
 
       $level = lc($level);
@@ -79,7 +79,7 @@ sub new {
       $self->{logbase} =  $in{-logPath} || $in{-logpath} || '';
 
       if ( $in{-user_id} ) {
-	    $self->{user_id} = $in{-user_id};
+        $self->{user_id} = $in{-user_id};
       }
 
       return( $self );
@@ -110,30 +110,30 @@ sub log {
       my $fh = $self->{HANDLE};
 
       if (!defined($fh)) {
-	    my $logpath;
-	    if ( $self->{user_id} ) {
-		  my $user_id = ( ('0'x(9 - length ($self->{user_id}))) . $self->{user_id});
-		  my $user_a = substr( $user_id, 0, 3 );
-		  my $user_b = substr( $user_id, 3, 3 );
-		  $logpath   = "$self->{logbase}/$user_a/$user_b/$user_id";
-	    } else {
-		  $logpath   = $self->{logbase};
-	    }
+        my $logpath;
+        if ( $self->{user_id} ) {
+          my $user_id = ( ('0'x(9 - length ($self->{user_id}))) . $self->{user_id});
+          my $user_a = substr( $user_id, 0, 3 );
+          my $user_b = substr( $user_id, 3, 3 );
+          $logpath   = "$self->{logbase}/$user_a/$user_b/$user_id";
+        } else {
+          $logpath   = $self->{logbase};
+        }
 
 
-	    $fh = new FileHandle;
-	    $fh->autoflush(1);
+        $fh = new FileHandle;
+        $fh->autoflush(1);
 
-	    my $dirpath = $logpath;
-	    $dirpath =~ s/[^\/]*$//; # strip filename
+        my $dirpath = $logpath;
+        $dirpath =~ s/[^\/]*$//; # strip filename
 
-	    $self->_prepdir($dirpath) || print STDERR "DBR::Util::Logger: FAILED to Prepare log path $dirpath\n";
-	    sysopen( $fh, $logpath, O_WRONLY|O_CREAT|O_APPEND, 0666 ) || print STDERR "DBR::Util::Logger: FAILED to open log $logpath\n";
+        $self->_prepdir($dirpath) || print STDERR "DBR::Util::Logger: FAILED to Prepare log path $dirpath\n";
+        sysopen( $fh, $logpath, O_WRONLY|O_CREAT|O_APPEND, 0666 ) || print STDERR "DBR::Util::Logger: FAILED to open log $logpath\n";
             binmode $fh, ':utf8';
 
-	    $self->{HANDLE} = $fh;
+        $self->{HANDLE} = $fh;
 
-	    $self->log( "New Logger $logpath opened by $caller",'DBR::Util::Logger','debug2'); # Yes, its recursive, but only once.
+        $self->log( "New Logger $logpath opened by $caller",'DBR::Util::Logger','debug2'); # Yes, its recursive, but only once.
 
       }
 
@@ -152,13 +152,13 @@ sub _prepdir{
 
       my $path;
       for (split(/\/+/,$dir)){
-	    $path .= ((defined($path)?'/':'') . $_);
-	    (!length($path) || -d $path) && next;
-	    if(-e _) {
-		  print STDERR "DBR::Util::Logger: ERROR! $path exists, but is not a directory.\n";
-		  return undef
-	    }
-	    mkdir($path, 0775 ) || print STDERR "DBR::Util::Logger: Failed to mkdir $path\n" && return undef;
+        $path .= ((defined($path)?'/':'') . $_);
+        (!length($path) || -d $path) && next;
+        if(-e _) {
+          print STDERR "DBR::Util::Logger: ERROR! $path exists, but is not a directory.\n";
+          return undef
+        }
+        mkdir($path, 0775 ) || print STDERR "DBR::Util::Logger: Failed to mkdir $path\n" && return undef;
       }
 
       return 1;
@@ -184,7 +184,7 @@ sub DESTROY{
       my $self = shift;
 
       if(defined($self->{HANDLE})){
-	    $self->{HANDLE}->close();
+        $self->{HANDLE}->close();
       }
 }
 
@@ -204,9 +204,9 @@ sub getTime {
       $time[4]++;
       my($i);
       for ($i=0;$i<=$#time;$i++) {
-	    if (length($time[$i])<2) {
-		  $time[$i] = "0$time[$i]";
-	    }
+        if (length($time[$i])<2) {
+          $time[$i] = "0$time[$i]";
+        }
       }
 
       $time[5] += 1900;
