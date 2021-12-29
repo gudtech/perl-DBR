@@ -1,0 +1,12 @@
+blib
+_sandbox
+MYMETA.json
+MYMETA.yml
+Makefile
+dbr_loadspec.log
+example/dbr_example.log
+example/generated_dbr.conf
+pm_to_blib
+.vscode
+.projectile
+.dir-locals.el
