@@ -263,6 +263,8 @@ sub set {
        my $table = $tables->[0]; # only the primary table is supported
        my $alias = $table->alias;
 
+       my $return_update_ref = delete $params{-return_update_ref};
+
        my @sets;
        foreach my $name ( keys %params ) {
            my $field = $table->get_field( $name ) or croak "Invalid field $name";
@@ -281,9 +283,15 @@ sub set {
 
        scalar(@sets) > 0 or croak('Must specify at least one field to set');
 
-       return $update->run;
        my $update = $self->[f_query]->transpose( 'Update', sets => \@sets );
 
+       if ($return_update_ref) {
+           $update->run;
+
+           return $update;
+       } else {
+           return $update->run;
+       }
 }
 
 sub limit{
