@@ -15,6 +15,7 @@ CREATE TABLE album (
   rating smallint unsigned,
   date_released int unsigned
 );
+CREATE UNIQUE INDEX album_artist_name ON album(artist_id, name);
 
 CREATE TABLE track (
   track_id INTEGER PRIMARY KEY DEFAULT NULL,

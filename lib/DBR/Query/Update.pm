@@ -39,7 +39,12 @@ sub sql{
       my $tables = join(',', map { $_->sql( $conn ) } @{$self->{tables}} );
       my $sets   = join(',', map { $_->sql( $conn ) } @{$self->{sets}}   );
 
-      $sql = "UPDATE $optimizer_hints$tables SET $sets";
+      $sql = "UPDATE $optimizer_hints$tables";
+      if ($self->{force_index}) {
+          my ($prefix, $postfix) = $conn->force_index_syntax;
+          $sql .= ' ' . $prefix . $conn->quote_identifier($self->{force_index}) . ($postfix // '');
+      }
+      $sql .= " SET $sets";
       $sql .= ' WHERE ' . $self->{where}->sql($conn) if $self->{where};
       $sql .= ' LIMIT ' . $self->_limit_clause       if $self->{limit} || $self->{offset};
 
