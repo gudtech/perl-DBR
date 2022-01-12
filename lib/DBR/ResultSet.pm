@@ -285,6 +285,10 @@ sub set {
 
        my $update = $self->[f_query]->transpose( 'Update', sets => \@sets );
 
+       if ($self->[f_query]->force_index) {
+           $update->force_index($self->[f_query]->force_index);
+       }
+
        if ($return_update_ref) {
            $update->run;
 
