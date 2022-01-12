@@ -21,7 +21,7 @@ sub sets{
       scalar(@sets) || croak('must provide at least one set');
 
       for (@sets){
-	    ref($_) eq 'DBR::Query::Part::Set' || croak('arguments must be Sets');
+        ref($_) eq 'DBR::Query::Part::Set' || croak('arguments must be Sets');
       }
 
       $self->{sets} = \@sets;

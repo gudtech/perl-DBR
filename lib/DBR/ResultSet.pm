@@ -264,27 +264,25 @@ sub set {
        my $alias = $table->alias;
 
        my @sets;
-       foreach my $name ( keys %params ){
-         my $field = $table->get_field( $name ) or croak "Invalid field $name";
-         $field->alias( $alias ) if $alias;
+       foreach my $name ( keys %params ) {
+           my $field = $table->get_field( $name ) or croak "Invalid field $name";
+           $field->alias( $alias ) if $alias;
 
-         $field->is_readonly && croak ("Field $name is readonly");
+           $field->is_readonly && croak ("Field $name is readonly");
 
-         my $value = $field->makevalue( $params{ $name } );
+           my $value = $field->makevalue( $params{ $name } );
 
-         $value->count == 1 or croak("Field $name allows only a single value");
+           $value->count == 1 or croak("Field $name allows only a single value");
 
-         my $setobj   = DBR::Query::Part::Set->new( $field, $value ) or return $self->_error('failed to create set object');
+           my $setobj   = DBR::Query::Part::Set->new( $field, $value ) or return $self->_error('failed to create set object');
 
-         push @sets, $setobj;
+           push @sets, $setobj;
        };
 
        scalar(@sets) > 0 or croak('Must specify at least one field to set');
 
-       my $update = $self->[f_query]->transpose( 'Update',
-                         sets => \@sets
-                           );
        return $update->run;
+       my $update = $self->[f_query]->transpose( 'Update', sets => \@sets );
 
 }
 
