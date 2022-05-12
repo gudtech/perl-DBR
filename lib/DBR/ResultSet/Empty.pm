@@ -29,4 +29,6 @@ sub _execute { 1     }
 
 sub TO_JSON { [] }
 
+sub can_nowait { 0, "Ignoring can_nowait on empty resultset" }
+
 1;
