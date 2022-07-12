@@ -29,6 +29,9 @@ sub _execute { 1     }
 
 sub TO_JSON { [] }
 
+# Don't need to worry about nowait functionality on an empty resultset
 sub can_nowait { 0, "Ignoring can_nowait on empty resultset" }
+sub nowait { shift }
+sub nowait_or_warn { shift }
 
 1;
