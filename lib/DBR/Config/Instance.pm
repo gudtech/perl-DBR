@@ -304,6 +304,10 @@ sub _new_connection{
           return $self->_error("Error: Failed to connect to db $config->{handle},$config->{class}");
       }
 
+      if($config->{connectstring} =~ /^dbi:mysql:/){
+        $dbh->do("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");
+      }
+
       my $connclass = $config->{connclass};
 
       return $self->_error("Failed to create $connclass object") unless
