@@ -26,6 +26,7 @@ WriteMakefile(
 				  'File::Path'         => '1.08',
 				  'FileHandle'         => 0,
 				  'Getopt::Long'       => 0,
+				  'Math::Round'        => '0.07',
 				  'Moose'              => 0,
 				  'POSIX'              => 0,
 				  'Scalar::Util'       => 0,
