@@ -1,4 +1,5 @@
 package DBR::Config::Trans::Dollars;
+use Math::Round qw();
 
 use strict;
 use base 'DBR::Config::Trans';
@@ -74,7 +75,7 @@ sub cents   {
 };
 sub dollars {
       return '' unless defined($_[0][0]);
-      return sprintf("%.02f",$_[0][0]/100)
+      return Math::Round::nearest(0.01, $_[0][0]/100);
 };
 
 sub format  {
