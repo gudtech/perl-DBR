@@ -75,7 +75,7 @@ sub cents   {
 };
 sub dollars {
       return '' unless defined($_[0][0]);
-      return Math::Round::nearest(0.01, $_[0][0]/100);
+      return sprintf("%.02f",Math::Round::nearest(0.01, $_[0][0]/100));
 };
 
 sub format  {
