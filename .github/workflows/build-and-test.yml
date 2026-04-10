@@ -1,0 +1,22 @@
+name: Build and Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: perl:5.24
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install CPAN dependencies and build
+        run: |
+          export PERL_MM_USE_DEFAULT=1
+          cpan App::mymeta_requires
+          perl Makefile.PL
+          cpan $(mymeta-requires)
+          make
+      - name: Run Test Suite
+        run: make test
