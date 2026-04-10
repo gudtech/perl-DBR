@@ -240,17 +240,26 @@ sub clone{
 
 }
 
-sub makevalue{ # shortcut function?
-      my $self = shift;
-      my $value = shift;
+sub makevalue {    # shortcut function?
+    my $self  = shift;
+    my $value = shift;
 
-      return DBR::Query::Part::Value->new(
-					  session   => $self->[O_session],
-					  value     => $value,
-					  is_number => $self->is_numeric,
-					  field     => $self,
-					 );
+    my $value_obj;
+    eval {
+        $value_obj = DBR::Query::Part::Value->new(
+            session   => $self->[O_session],
+            value     => $value,
+            is_number => $self->is_numeric,
+            field     => $self,
+        );
+    };
 
+    if ($@) {
+        my $field_path = $self->table->sql_instance->database . "." . $self->table->name . "." . $self->name;
+        my $want_value = ref($value) ? join ',', @$value : $value;
+        die "[$field_path -> $want_value] : $@";
+    }
+    return $value_obj;
 }
 
 sub field_id     { $_[0]->[O_field_id] }
