@@ -254,12 +254,42 @@ sub makevalue {    # shortcut function?
         );
     };
 
-    if ($@) {
-        my $field_path = $self->table->sql_instance->database . "." . $self->table->name . "." . $self->name;
-        my $want_value = ref($value) ? join ',', @$value : $value;
-        die "[$field_path -> $want_value] : $@";
+    if ( my $err = $@ ) {
+        # Opaque locator so the otherwise-anonymous "invalid value" is traceable
+        # without leaking schema names or values to outside consumers.
+        # Format:  <dbr_instances.tag>.<dbr_tables.id>.<dbr_fields.id>:<value-shape>
+        my $tag     = eval { $self->table->sql_instance->tag } || '?';
+        my $locator = sprintf '%s.%s.%s:%s',
+          $tag, ( $self->table_id // '?' ), ( $self->field_id // '?' ), _value_shape($value);
+
+        chomp $err;
+        # Insert before the "at FILE line N" so UnRPC still removes the file path & backtrace
+        unless ( $err =~ s/(\s*at .+ line \d+[.\n]*)$/ [$locator]$1/s ) {
+            $err .= " [$locator]";
+        }
+        die "$err\n";
     }
     return $value_obj;
+}
+
+# The value's SHAPE to show instead of the value itself.
+sub _value_shape {
+    my ($v) = @_;
+    return 'undef' unless defined $v;
+    if ( my $ref = ref $v ) {
+        return 'arrayref[' . scalar(@$v) . ']' if $ref eq 'ARRAY';
+        return "ref:$ref";
+    }
+    return 'empty' if $v eq '';
+    my @cls;
+    push @cls, 'digit' if $v =~ /[0-9]/;
+    push @cls, 'alpha' if $v =~ /[A-Za-z]/;
+    push @cls, 'comma' if $v =~ /,/;
+    push @cls, 'space' if $v =~ /\s/;
+    push @cls, 'dot'   if $v =~ /\./;
+    push @cls, 'dash'  if $v =~ /-/;
+    push @cls, 'other' if $v =~ /[^0-9A-Za-z,\s.\-]/;
+    return 'len' . length($v) . '_' . join( '+', @cls );
 }
 
 sub field_id     { $_[0]->[O_field_id] }
